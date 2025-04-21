@@ -20,7 +20,7 @@ const page = () => {
 
         <div className="mt-8 flex flex-col items-center gap-4">
           <Link href={'/dashboard'} aria-label="Go to Dashboard">
-            <Button size="lg" className='text-base'>
+            <Button size="lg" className='text-base cursor-pointer' variant={"ghost"}>
               Start Enhancing Prompts <ArrowRight className='ml-2 h-5 w-5' />
             </Button>
           </Link>

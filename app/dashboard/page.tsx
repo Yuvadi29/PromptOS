@@ -1,40 +1,42 @@
-'use client'
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { DashboardCard } from "../../components/DashboardCard";
 
-import { useState } from "react";
+export default async function Dashboard() {
+  const session = await getServerSession(authOptions);
 
-export default function Dashboard() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
+  if (!session) {
+    redirect('/');
+  }
 
-  const handleSubmit = async () => {
-    const res = await fetch("/api/prompt", {
-      method: "POST",
-      body: JSON.stringify({ input }),
-      headers: { "Content-Type": "application/json" },
-    });
-    const data = await res.json();
-    setOutput(data.result);
-  };
+  const user = session?.user;
+
 
   return (
-    <div className="max-w-3xl mx-auto py-10">
-      <textarea
-        className="w-full border rounded p-2"
-        rows={4}
-        placeholder="Enter your prompt here..."
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-      <button onClick={handleSubmit} className="mt-2 px-4 py-2 bg-black text-white rounded">
-        Generate
-      </button>
+    <main className="p-8">
+      <h1 className="text-3xl font-bold mb-4">Welcome Back, {user?.name?.split(" ")[0]} 👋</h1>
 
-      {output && (
-        <div className="mt-4 p-4 bg-gray-100 rounded">
-          <h2 className="font-semibold">Result:</h2>
-          <p>{output}</p>
-        </div>
-      )}
-    </div>
+      <p className="text-gray-600 mb-6">Here's what you can do:</p>
+
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <DashboardCard
+          title="Prompt Enhancer"
+          desc="Rewrite and optimize prompts using Gemini."
+          href="/dashboard/enhancer"
+        />
+        <DashboardCard
+          title="LLM Output Comparison"
+          desc="Compare outputs from GPT-4, Claude, Gemini."
+          href="/dashboard/comparison"
+        />
+        <DashboardCard
+          title="Prompt Library"
+          desc="Save and organize your enhanced prompts."
+          href="/dashboard/library"
+        />
+      </div>
+    </main>
   );
 }
+
