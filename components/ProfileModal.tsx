@@ -3,8 +3,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar } from "@/components/ui/avatar";
 import { useState } from "react";
+import Image from "next/image";
 
 interface ProfileModalProps {
   user: {
@@ -18,15 +19,14 @@ export default function ProfileModal({ user }: ProfileModalProps) {
   const [open, setOpen] = useState(false); // Handle modal open/close
 
   return (
-    <div className="cursor-pointer border-2 border-blue-500 text-black">
+    <div className="cursor-pointer text-black">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" className="rounded-full p-0">
-            <Avatar className="w-8 h-8">
-              {/* Fix image path here */}
-              <AvatarImage src={user?.image || "/default-image.png"} />
-              <AvatarFallback>{user?.name?.split(" ")[0]}</AvatarFallback>
+          <Button variant="ghost" className="rounded-full p-3 flex items-center space-x-3 cursor-pointer">
+            <Avatar className="w-10 h-10">
+              <Image src={user?.image || "/avatar.png"} alt={user?.name || "User avatar"} width={40} height={40}/>
             </Avatar>
+            <span className="text-black font-medium">{user?.name}</span>
           </Button>
         </DialogTrigger>
 
