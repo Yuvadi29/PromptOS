@@ -1,10 +1,8 @@
-import React from 'react';
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
+'use client';
+
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from './ui/sidebar';
 import { GitCompareIcon, LibraryIcon, Settings2Icon } from 'lucide-react';
 import Link from 'next/link';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { redirect } from 'next/navigation';
 import ProfileModal from './ProfileModal';
 
 // Menu Items
@@ -26,17 +24,22 @@ const items = [
   }
 ];
 
-const SideBar = async () => {
-  const session = await getServerSession(authOptions);
+type User = {
+  name?: string;
+  email?: string;
+  image?: string;
+};
 
-  if (!session) {
-    redirect('/');
-  }
+type SideBarProps = {
+  user?: User;
+};
 
-  const user = session?.user;
-
+const SideBar = ({ user }: SideBarProps) => {
   return (
-    <Sidebar className="flex flex-col h-screen ">
+    <Sidebar className="relative">
+      {/* Trigger positioned at top-right corner */}
+      {/* <SidebarTrigger className='absolute top-2 -right-9 rounded-full p-2'/> */}
+
       {/* Top Section */}
       <div className='flex-1 overflow-y-auto'>
         <SidebarHeader />

@@ -101,7 +101,7 @@ export default function PromptEnhancer() {
 
   return (
     <SidebarProvider>
-      <div className="border border-red-400">
+      <div className="border border-red-400 flex w-screen">
         {/* Sidebar */}
         <div className="w-64 border-r border-gray-200 bg-white">
           <SideBar />
@@ -160,37 +160,6 @@ export default function PromptEnhancer() {
                 />
               </div>
             )}
-            {/* <textarea className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
-            >
-              "category,subcategory,prompt_text
-              code,review,Review this JavaScript function for performance issues:\nfunction
-              code,review,Can you identify and fix potential bugs in this React component?
-              code,analysis,Analyze the runtime complexity of this JavaScript loop.
-              code,completion,Complete the following Python function to calculate factorial.
-              code,generation,Generate a Node.js Express route that handles user registration.
-              category,subcategory,prompt_text
-              code,review,Review this JavaScript function for performance issues:\nfunction
-              code,review,Can you identify and fix potential bugs in this React component?
-              code,analysis,Analyze the runtime complexity of this JavaScript loop.
-              code,completion,Complete the following Python function to calculate factorial.
-              code,generation,Generate a Node.js Express route that handles user registration.category,subcategory,prompt_text
-              code,review,Review this JavaScript function for performance issues:\nfunction
-              code,review,Can you identify and fix potential bugs in this React component?
-              code,analysis,Analyze the runtime complexity of this JavaScript loop.
-              code,completion,Complete the following Python function to calculate factorial.
-              code,generation,Generate a Node.js Express route that handles user registration.category,subcategory,prompt_text
-              code,review,Review this JavaScript function for performance issues:\nfunction
-              code,review,Can you identify and fix potential bugs in this React component?
-              code,analysis,Analyze the runtime complexity of this JavaScript loop.
-              code,completion,Complete the following Python function to calculate factorial.
-              code,generation,Generate a Node.js Express route that handles user registration.category,subcategory,prompt_text
-              code,review,Review this JavaScript function for performance issues:\nfunction
-              code,review,Can you identify and fix potential bugs in this React component?
-              code,analysis,Analyze the runtime complexity of this JavaScript loop.
-              code,completion,Complete the following Python function to calculate factorial.
-              code,generation,Generate a Node.js Express route that handles user registration.
-              "
-            </textarea> */}
 
             <div className="border-2 border-pink-500 w-full flex justify-center items-center gap-4 cursor-pointer">
               <h2 className='text-gray-500'>Are you happy with the response given by AI?</h2>
