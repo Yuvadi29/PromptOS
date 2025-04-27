@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from "@supabase/supabase-js";
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 if (!apiKey) {
@@ -8,11 +7,6 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey);
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export async function POST(req: NextRequest) {
   const { prompt } = await req.json();

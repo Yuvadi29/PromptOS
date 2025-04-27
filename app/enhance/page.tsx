@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import SideBar from '@/components/SideBar'
-import { Copy } from 'lucide-react'
+import { Copy, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function PromptEnhancer() {
@@ -56,6 +56,49 @@ export default function PromptEnhancer() {
     }
   }
 
+  const handlePositiveFeedback = async () => {
+    try {
+      const storeFeedback = await fetch('/api/positive-feedback', {
+        method: 'POST',
+        body: JSON.stringify({ response }), // no need to `${response}` because it's already a string
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (storeFeedback.ok) {
+        toast.success('Thank you for your feedback!');
+      } else {
+        toast.error('Failed to store feedback.');
+      }
+    } catch (error) {
+      console.error('Error Storing Feedback: ', error);
+      toast.error('Something went wrong.');
+    }
+  };
+  
+  const handleNegativeFeedback = async () => {
+    try {
+      const storeFeedback = await fetch('/api/negative-feedback', {
+        method: 'POST',
+        body: JSON.stringify({ response }), // no need to `${response}` because it's already a string
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (storeFeedback.ok) {
+        toast.success('Thank you for your feedback!');
+      } else {
+        toast.error('Failed to store feedback.');
+      }
+    } catch (error) {
+      console.error('Error Storing Feedback: ', error);
+      toast.error('Something went wrong.');
+    }
+  };
+  
+
   return (
     <SidebarProvider>
       <div className="border border-red-400">
@@ -102,7 +145,7 @@ export default function PromptEnhancer() {
             </motion.form>
 
             {/* Response Section */}
-            {response && (
+            {response.slice(7) && (
               <div className="relative">
                 <motion.textarea
                   ref={input2Ref}
@@ -117,7 +160,43 @@ export default function PromptEnhancer() {
                 />
               </div>
             )}
+            {/* <textarea className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
+            >
+              "category,subcategory,prompt_text
+              code,review,Review this JavaScript function for performance issues:\nfunction
+              code,review,Can you identify and fix potential bugs in this React component?
+              code,analysis,Analyze the runtime complexity of this JavaScript loop.
+              code,completion,Complete the following Python function to calculate factorial.
+              code,generation,Generate a Node.js Express route that handles user registration.
+              category,subcategory,prompt_text
+              code,review,Review this JavaScript function for performance issues:\nfunction
+              code,review,Can you identify and fix potential bugs in this React component?
+              code,analysis,Analyze the runtime complexity of this JavaScript loop.
+              code,completion,Complete the following Python function to calculate factorial.
+              code,generation,Generate a Node.js Express route that handles user registration.category,subcategory,prompt_text
+              code,review,Review this JavaScript function for performance issues:\nfunction
+              code,review,Can you identify and fix potential bugs in this React component?
+              code,analysis,Analyze the runtime complexity of this JavaScript loop.
+              code,completion,Complete the following Python function to calculate factorial.
+              code,generation,Generate a Node.js Express route that handles user registration.category,subcategory,prompt_text
+              code,review,Review this JavaScript function for performance issues:\nfunction
+              code,review,Can you identify and fix potential bugs in this React component?
+              code,analysis,Analyze the runtime complexity of this JavaScript loop.
+              code,completion,Complete the following Python function to calculate factorial.
+              code,generation,Generate a Node.js Express route that handles user registration.category,subcategory,prompt_text
+              code,review,Review this JavaScript function for performance issues:\nfunction
+              code,review,Can you identify and fix potential bugs in this React component?
+              code,analysis,Analyze the runtime complexity of this JavaScript loop.
+              code,completion,Complete the following Python function to calculate factorial.
+              code,generation,Generate a Node.js Express route that handles user registration.
+              "
+            </textarea> */}
 
+            <div className="border-2 border-pink-500 w-full flex justify-center items-center gap-4 cursor-pointer">
+              <h2 className='text-gray-500'>Are you happy with the response given by AI?</h2>
+              <ThumbsUpIcon style={{ color: 'green' }} size={32} onClick={handlePositiveFeedback}/>
+              <ThumbsDownIcon style={{ color: 'red' }} size={32} onClick={handleNegativeFeedback}/>
+            </div>
 
             {/* Loading Animation */}
             <AnimatePresence>
