@@ -2,10 +2,10 @@ import React from 'react';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
 import { GitCompareIcon, LibraryIcon, Settings2Icon } from 'lucide-react';
 import Link from 'next/link';
-import Profile from './Profile';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import ProfileModal from './ProfileModal';
 
 // Menu Items
 const items = [
@@ -65,7 +65,11 @@ const SideBar = async () => {
 
       {/* Bottom Section */}
       <div className="p-4 border-t border-gray-200">
-        <Profile name={user?.name ?? ''} image={user?.image ?? ''} />
+        <ProfileModal user={{
+          name: user?.name ?? '',
+          email: user?.email ?? '',
+          image: user?.image ?? ''
+        }} />
       </div>
     </Sidebar>
   );

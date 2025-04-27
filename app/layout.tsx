@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "PromptOS",
-  description: "Your Own Prompt Library",
+  description: "Your Own Prompt",
 };
 
 export default function RootLayout({
