@@ -16,7 +16,7 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ user }: ProfileModalProps) {
-  const [open, setOpen] = useState(false); // Handle modal open/close
+  const [open, setOpen] = useState(false);
 
   return (
     <div className="cursor-pointer text-black">
