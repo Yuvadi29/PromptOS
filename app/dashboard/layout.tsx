@@ -37,8 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : undefined;
 
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           <SidebarProvider>
             <UserProvider user={user}>
@@ -52,7 +51,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </UserProvider>
           </SidebarProvider>
         </Providers>
-      </body>
-    </html>
+      </div>
   );
 }

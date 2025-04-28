@@ -8,14 +8,38 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 // import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/context/UserContext";
+import { useEffect, useState } from "react";
+import supabase from "@/lib/supabase";
 
 export default function Dashboard() {
   const user = useUser();
+  const [promptCount, setPromptCount] = useState<number>(0);
+
+  useEffect(() => {
+    const getPrompts = async () => {
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', user?.email)
+        .single();
+
+      const { data, error: promptError, count } = await supabase
+        .from("prompts")
+        .select('*', { count: 'exact' })
+        .eq('created_by', userData?.id);
+
+        if(promptError){
+          console.log('Error Fetching Prompts: ', promptError);
+        } else {
+          setPromptCount(count || 0);
+        }
+    };
+    getPrompts();
+  }, [])
 
   return (
     <SidebarProvider>
       <div className="flex w-screen">
-
         <main className="items-center justify-center p-4 w-full  ">
           <div className="flex flex-col gap-6 p-6 md:gap-8 md:p-8">
             <div className="flex flex-col gap-2">
@@ -51,10 +75,8 @@ export default function Dashboard() {
                       <BookMarked className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      {/* <div className="text-2xl font-bold">24</div> */}
+                      <div className="text-2xl font-bold">{promptCount}</div>
                       {/* <p className="text-xs text-muted-foreground">+4 new this week</p> */}
-                      <p className="text-xs text-muted-foreground">Coming Soon..</p>
-
                     </CardContent>
                   </Card>
 

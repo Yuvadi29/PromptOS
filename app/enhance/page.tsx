@@ -16,9 +16,6 @@ export default function PromptEnhancer() {
   const input2Ref = useRef<HTMLTextAreaElement>(null)
   const { data: session } = useSession();
 
-  const user = useUser();
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setResponse('')
