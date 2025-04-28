@@ -3,15 +3,21 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import SideBar from '@/components/SideBar'
 import { Copy, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react'
 import { toast } from 'sonner'
+import { useSession } from 'next-auth/react'
+import supabase from '@/lib/supabase'
+import { useUser } from '@/context/UserContext'
 
 export default function PromptEnhancer() {
   const [input1, setInput1] = useState('')
   const [response, setResponse] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const input2Ref = useRef<HTMLTextAreaElement>(null)
+  const { data: session } = useSession();
+
+  const user = useUser();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,6 +55,53 @@ export default function PromptEnhancer() {
     }
   }, [response])
 
+  useEffect(() => {
+    if (response) {
+      const timer = setTimeout(async () => {
+        try {
+          if (!session?.user?.email) {
+            console.log('User not authenticated');
+            return;
+          }
+
+          // Fetch user id from Supabase
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', session?.user?.email)
+            .single();
+
+          if (error || !userData) {
+            console.error('Failed to fetch user ID from Supabase: ', error);
+            return;
+          }
+
+          console.log('UserID: ', userData.id);
+
+          const res = await fetch('/api/save-prompt', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: userData?.id,
+              prompt: response,
+            }),
+          });
+
+          if (res.ok) {
+            toast.success('Prompt Saved!!');
+          } else {
+            toast.warning('Failed to Save Prompt')
+          }
+        } catch (error) {
+          console.error('Error Saving the prompt: ', error);
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [response, session, supabase]);
+
   const handleCopy = () => {
     if (response) {
       navigator.clipboard.writeText(response)
@@ -65,7 +118,7 @@ export default function PromptEnhancer() {
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (storeFeedback.ok) {
         toast.success('Thank you for your feedback!');
       } else {
@@ -76,7 +129,7 @@ export default function PromptEnhancer() {
       toast.error('Something went wrong.');
     }
   };
-  
+
   const handleNegativeFeedback = async () => {
     try {
       const storeFeedback = await fetch('/api/negative-feedback', {
@@ -86,7 +139,7 @@ export default function PromptEnhancer() {
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (storeFeedback.ok) {
         toast.success('Thank you for your feedback!');
       } else {
@@ -97,18 +150,15 @@ export default function PromptEnhancer() {
       toast.error('Something went wrong.');
     }
   };
-  
+
 
   return (
     <SidebarProvider>
-      <div className="border border-red-400 flex w-screen">
+      <div className=" flex w-screen">
         {/* Sidebar */}
-        <div className="w-64 border-r border-gray-200 bg-white">
-          <SideBar />
-        </div>
 
         {/* Main Content */}
-        <div className="flex flex-1 items-center justify-center p-4 border-2 border-green-600 w-screen">
+        <div className="flex flex-1 items-center justify-center p-4 w-screen">
           <div className="w-full max-w-4xl space-y-8 flex flex-col items-center text-center">
             {/* Title */}
             <div>
@@ -163,8 +213,8 @@ export default function PromptEnhancer() {
 
             <div className="border-2 border-pink-500 w-full flex justify-center items-center gap-4 cursor-pointer">
               <h2 className='text-gray-500'>Are you happy with the response given by AI?</h2>
-              <ThumbsUpIcon style={{ color: 'green' }} size={32} onClick={handlePositiveFeedback}/>
-              <ThumbsDownIcon style={{ color: 'red' }} size={32} onClick={handleNegativeFeedback}/>
+              <ThumbsUpIcon style={{ color: 'green' }} size={32} onClick={handlePositiveFeedback} />
+              <ThumbsDownIcon style={{ color: 'red' }} size={32} onClick={handleNegativeFeedback} />
             </div>
 
             {/* Loading Animation */}

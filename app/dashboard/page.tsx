@@ -1,39 +1,20 @@
-import SideBar from "@/components/SideBar";
+'use client';
+
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { authOptions } from "@/lib/auth";
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
 import { ArrowRight, BarChart3, BookMarked, Clock, Lightbulb, Sparkles, Star } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 // import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useUser } from "@/context/UserContext";
 
-export default async function Dashboard() {
-
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect('/');
-  }
-
-  // Convert nulls to undefined for compatibility with SideBar's User type
-  const user = session?.user
-    ? {
-        name: session.user.name ?? undefined,
-        email: session.user.email ?? undefined,
-        image: session.user.image ?? undefined,
-      }
-    : undefined;
+export default function Dashboard() {
+  const user = useUser();
 
   return (
     <SidebarProvider>
       <div className="flex w-screen">
-        {/* Sidebar */}
-        <div className="bg-white">
-          <SideBar user={user}/>
-        </div>
 
         <main className="items-center justify-center p-4 w-full  ">
           <div className="flex flex-col gap-6 p-6 md:gap-8 md:p-8">

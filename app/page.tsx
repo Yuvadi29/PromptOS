@@ -1,3 +1,5 @@
+'use client';
+
 import { Button } from "@/components/ui/button"
 import {
   ArrowRight,
@@ -25,8 +27,21 @@ import TerminalWindow from "@/components/terminal-window"
 import ScrollAnimation from "@/components/scroll-animation"
 import GradientText from "@/components/gradient-text"
 import { AuthButton } from "@/components/AuthButton"
+import { useEffect } from "react"
+import { toast } from "sonner"
+import { useSearchParams } from "next/navigation"
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
+
+  useEffect(() => {
+    if (error === 'unauthorized') {
+      toast.info('Please sign in first!!');
+    }
+  }, [error]);
+
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -47,10 +62,10 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href={'/dashboard'}>
-              <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white px-8 py-6 text-lg border-0">
-                Get Started
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+                <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white px-8 py-6 text-lg border-0">
+                  Get Started
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
               </Link>
               <div className="border-white text-whitetext-lg">
                 <AuthButton />

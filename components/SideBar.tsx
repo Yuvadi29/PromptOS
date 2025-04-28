@@ -1,7 +1,7 @@
 'use client';
 
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from './ui/sidebar';
-import { GitCompareIcon, LibraryIcon, Settings2Icon } from 'lucide-react';
+import { GitCompareIcon, HomeIcon, LibraryIcon, Settings2Icon } from 'lucide-react';
 import Link from 'next/link';
 import ProfileModal from './ProfileModal';
 
@@ -21,6 +21,11 @@ const items = [
     title: "Prompt Library",
     url: "/prompt-library",
     icon: LibraryIcon
+  }, 
+  {
+    title: 'Dashboard',
+    url: "/dashboard",
+    icon: HomeIcon
   }
 ];
 
