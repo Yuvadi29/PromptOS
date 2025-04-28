@@ -15,6 +15,7 @@ export default function PromptEnhancer() {
   const [isLoading, setIsLoading] = useState(false)
   const input2Ref = useRef<HTMLTextAreaElement>(null)
   const { data: session } = useSession();
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -95,7 +96,17 @@ export default function PromptEnhancer() {
           console.error('Error Saving the prompt: ', error);
         }
       }, 3000);
-      return () => clearTimeout(timer);
+
+
+      // Show Feedback after 5 seconds
+      const feedbackTimer = setTimeout(() => {
+        setShowFeedback(true);
+      }, 5000);
+
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(feedbackTimer);
+      }
     }
   }, [response, session, supabase]);
 
@@ -151,31 +162,28 @@ export default function PromptEnhancer() {
 
   return (
     <SidebarProvider>
-      <div className=" flex w-screen">
-        {/* Sidebar */}
-
+      <div className="flex w-screen min-h-screen bg-gray-50">
         {/* Main Content */}
-        <div className="flex flex-1 items-center justify-center p-4 w-screen">
-          <div className="w-full max-w-4xl space-y-8 flex flex-col items-center text-center">
+        <div className="flex flex-1 items-center justify-center w-screen">
+          <div className="w-full max-w-4xl flex flex-col items-center text-center space-y-10 border-2 border-amber-500 mb-[40rem]">
             {/* Title */}
-            <div>
-              <h2 className="text-4xl font-bold mb-2">Prompt Enhancer</h2>
+            <div className='space-y-2 border-2 border-blue-500'>
+              <h2 className="text-5xl font-bold text-gray-800">Prompt Enhancer</h2>
               <h3 className="text-xl text-gray-500">
                 Just enter your prompts and let AI enhance them for you.
               </h3>
             </div>
-
             {/* Prompt Inputs */}
             <motion.form
               onSubmit={handleSubmit}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              className="w-full flex flex-col md:flex-row gap-4 items-center justify-center"
+              className="w-full flex flex-col md:flex-row gap-6 items-center border-2 border-red-500"
             >
               {/* Input 1 */}
               <textarea
-                className="w-full md:w-1/2 p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black overflow-y-auto"
+                className="w-full md:w-2/3 p-4 border border-gray-300 rounded-2xl shadow-md focus:outline-none focus:ring-2 focus:ring-black resize-none"
                 value={input1}
                 onChange={(e) => setInput1(e.target.value)}
                 placeholder="Enter your prompt here..."
@@ -185,9 +193,9 @@ export default function PromptEnhancer() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="bg-black text-white px-6 py-3 rounded-xl hover:bg-gray-900 transition md:ml-4 cursor-pointer"
+                className="bg-black text-white font-semibold px-8 py-4 rounded-2xl hover:bg-gray-900 transition cursor-pointer"
               >
-                Enhance
+                {isLoading ? 'Enhancig....' : 'Enhance'}
               </button>
             </motion.form>
 
@@ -196,23 +204,41 @@ export default function PromptEnhancer() {
               <div className="relative">
                 <motion.textarea
                   ref={input2Ref}
-                  className="w-full p-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
+                  className="w-full p-4 border border-gray-300 rounded-2xl shadow-md focus:outline-none focus:ring-2 focus:ring-black resize-none overflow-y-hidden"
                   value={response}
                   placeholder="Enhanced prompt will appear here..."
                   disabled
+                  rows={6}
                 />
                 <Copy
                   onClick={handleCopy}
-                  className="absolute top-2 right-2 cursor-pointer text-gray-500 hover:text-black"
+                  className="absolute top-3 right-3 cursor-pointer text-gray-400 hover:text-black"
                 />
               </div>
             )}
 
-            <div className="border-2 border-pink-500 w-full flex justify-center items-center gap-4 cursor-pointer">
-              <h2 className='text-gray-500'>Are you happy with the response given by AI?</h2>
-              <ThumbsUpIcon style={{ color: 'green' }} size={32} onClick={handlePositiveFeedback} />
-              <ThumbsDownIcon style={{ color: 'red' }} size={32} onClick={handleNegativeFeedback} />
-            </div>
+            {/* Feedback Section */}
+            <AnimatePresence>
+              {showFeedback && (
+                <motion.div
+                key="feedback"
+                initial={{opacity:0, scale: 0.8}}
+                animate={{opacity:1, scale:1}}
+                exit={{opacity: 0}}
+                transition={{duration: 0.5}}
+                className='w-full flex flex-col items-center gap-4 p-6 bg-white border border-gray-200 rounded-2xl shadow-lg mt-4'
+                >
+                    <h2 className=' text-lg text-gray-700'>Are you happy with the response given by AI?</h2>
+                    <div className="flex gap-8">
+
+                    <ThumbsUpIcon style={{ color: 'green' }} size={36} onClick={handlePositiveFeedback} className='hover:scale-110 transition cursor-pointer'/>
+                    <ThumbsDownIcon style={{ color: 'red' }} size={36} onClick={handleNegativeFeedback} className='hover:scale-110 transition cursor-pointer'/>
+                    </div>
+
+                </motion.div>
+              )}
+            </AnimatePresence>
+
 
             {/* Loading Animation */}
             <AnimatePresence>
@@ -222,7 +248,7 @@ export default function PromptEnhancer() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-center text-gray-500 text-sm"
+                  className="text-center text-gray-500 text-sm mt-4"
                 >
                   Enhancing prompts <span className="animate-pulse">...</span>
                 </motion.div>
