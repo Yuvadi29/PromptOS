@@ -1,9 +1,11 @@
 'use client';
 
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from './ui/sidebar';
-import { GitCompareIcon, HomeIcon, LibraryIcon, Settings2Icon } from 'lucide-react';
+import { GitCompareIcon, HomeIcon, LibraryIcon, LogOutIcon, Settings2Icon } from 'lucide-react';
 import Link from 'next/link';
 import ProfileModal from './ProfileModal';
+import { signOut } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 
 // Menu Items
 const items = [
@@ -40,6 +42,12 @@ type SideBarProps = {
 };
 
 const SideBar = ({ user }: SideBarProps) => {
+
+  const handleSignOut = async () => {
+    await signOut();
+    redirect('/');
+  };
+
   return (
     <Sidebar className="relative">
       {/* Trigger positioned at top-right corner */}
@@ -73,11 +81,17 @@ const SideBar = ({ user }: SideBarProps) => {
 
       {/* Bottom Section */}
       <div className="p-4 border-t border-gray-200">
+        <>
+        <div className="flex space-x-3 cursor-pointer">
+        <LogOutIcon className='mb-4 ml-5' onClick={handleSignOut}/>
+        <p className='font-medium ml-4'>Logout</p>
+        </div>
         <ProfileModal user={{
           name: user?.name ?? '',
           email: user?.email ?? '',
           image: user?.image ?? ''
         }} />
+        </>
       </div>
     </Sidebar>
   );

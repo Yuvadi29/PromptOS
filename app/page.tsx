@@ -62,7 +62,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href={'/dashboard'}>
-                <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white px-8 py-6 text-lg border-0">
+                <Button className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white px-8 py-6 text-lg border-0 cursor-pointer">
                   Get Started
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>

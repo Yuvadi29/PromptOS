@@ -10,7 +10,7 @@ export function AuthButton() {
         return (
             <div className="flex items-center gap-4 cursor-pointer">
                 <p className="text-sm">Welcome, {session?.user?.name}</p>
-                <Button variant={"secondary"} onClick={() => signOut()} className="p-6 ">Sign Out</Button>
+                <Button variant={"secondary"} onClick={() => signOut()} className="p-6 cursor-pointer ">Sign Out</Button>
             </div>
         );
     }
