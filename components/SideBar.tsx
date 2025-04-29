@@ -82,8 +82,8 @@ const SideBar = ({ user }: SideBarProps) => {
       {/* Bottom Section */}
       <div className="p-4 border-t border-gray-200">
         <>
-        <div className="flex space-x-3 cursor-pointer">
-        <LogOutIcon className='mb-4 ml-5' onClick={handleSignOut}/>
+        <div className="flex space-x-3 cursor-pointer" onClick={handleSignOut}>
+        <LogOutIcon className='mb-4 ml-5' />
         <p className='font-medium ml-4'>Logout</p>
         </div>
         <ProfileModal user={{
