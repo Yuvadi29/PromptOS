@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import Markdown from "react-markdown";
 
 interface ComparisonResultsProps {
   results: {
@@ -56,9 +57,10 @@ function ModelCard({
           </div>
         ) : (
           <div className="whitespace-pre-wrap text-sm border-2 bg-gray-800 text-white p-7 rounded-2xl">
-            <code>
-            {content}
-            </code>
+            <Markdown>
+              {content || ""}
+            </Markdown>
+
             </div>
         )}
       </CardContent>
