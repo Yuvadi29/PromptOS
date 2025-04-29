@@ -24,9 +24,9 @@ export function ComparisonResults({ results, isLoading }: ComparisonResultsProps
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <ModelCard title="Model 1 (GPT-4)" content={results.model1} isLoading={isLoading} />
-      <ModelCard title="Model 2 (Claude)" content={results.model2} isLoading={isLoading} />
-      <ModelCard title="Model 3 (Gemini)" content={results.model3} isLoading={isLoading} />
+      <ModelCard title="Model 1 (llama-3.3-70b-versatile)" content={results.model1} isLoading={isLoading} />
+      <ModelCard title="Model 2 (llama3-70b-8192)" content={results.model2} isLoading={isLoading} />
+      <ModelCard title="Model 3 (gemma2-9b-it)" content={results.model3} isLoading={isLoading} />
     </div>
   )
 }
@@ -55,7 +55,11 @@ function ModelCard({
             <Skeleton className="h-4 w-[90%]" />
           </div>
         ) : (
-          <div className="whitespace-pre-wrap text-sm">{content}</div>
+          <div className="whitespace-pre-wrap text-sm border-2 bg-gray-800 text-white p-7 rounded-2xl">
+            <code>
+            {content}
+            </code>
+            </div>
         )}
       </CardContent>
     </Card>

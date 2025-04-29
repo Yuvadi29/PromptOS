@@ -22,22 +22,53 @@ export default function LLMComparison() {
         model3: null,
     })
 
+    // const handleSubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault()
+    //     if (!prompt.trim()) return
+
+    //     setIsLoading(true)
+
+    //     // Simulate API calls to different LLMs
+    //     setTimeout(() => {
+    //         setResults({
+    //             model1: `Model 1 response to: "${prompt}"\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisl eget aliquam ultricies, nunc nisl aliquet nunc, quis aliquam nisl nunc quis nisl.`,
+    //             model2: `Model 2 response to: "${prompt}"\n\nSed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.`,
+    //             model3: `Model 3 response to: "${prompt}"\n\nAt vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.`,
+    //         })
+    //         setIsLoading(false)
+    //     }, 1500)
+    // }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!prompt.trim()) return
-
+      
         setIsLoading(true)
-
-        // Simulate API calls to different LLMs
-        setTimeout(() => {
-            setResults({
-                model1: `Model 1 response to: "${prompt}"\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisl eget aliquam ultricies, nunc nisl aliquet nunc, quis aliquam nisl nunc quis nisl.`,
-                model2: `Model 2 response to: "${prompt}"\n\nSed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.`,
-                model3: `Model 3 response to: "${prompt}"\n\nAt vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.`,
-            })
-            setIsLoading(false)
-        }, 1500)
-    }
+        setResults({ model1: null, model2: null, model3: null })
+      
+        try {
+          const res = await fetch('/api/compare-llm', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt }),
+          })
+      
+          const data = await res.json()
+      
+          setResults({
+            model1: data.model1,
+            model2: data.model2,
+            model3: data.model3,
+          })
+        } catch (err) {
+          console.error('API call failed', err)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      
 
     return (
         <div className="flex h-screen w-full overflow-hidden">
