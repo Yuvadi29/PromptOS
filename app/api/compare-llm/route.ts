@@ -40,7 +40,7 @@ Avoid redundancy and aim for a well-organized, easy-to-read response (e.g., stru
 
     const responses = await Promise.all(
       MODELS.map(async (model) => {
-        const chatCompletion = await groq.chat.completions.create({
+        const stream = await groq.chat.completions.create({
           model,
           messages: [
             {
@@ -52,11 +52,20 @@ Avoid redundancy and aim for a well-organized, easy-to-read response (e.g., stru
               content: prompt,
             },
           ],
+          stream: true,
         });
+
+        let responseContent = "";
+        for await (const chunk of stream) {
+          const delta = chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.delta?.content;
+          if (delta) {
+            responseContent += delta;
+          }
+        }
 
         return {
           model,
-          response: chatCompletion.choices[0].message.content,
+          response: responseContent,
         };
       })
     );
