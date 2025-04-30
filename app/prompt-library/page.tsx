@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
 // Sample data for prompts
 const initialPrompts = [
@@ -175,6 +176,12 @@ export default function PromptLibrary() {
     filterPrompts(selectedNiche, sortBy)
   }
 
+  const handleCopy = () => {
+    // if (response) {
+    //   navigator.clipboard.writeText(response)
+      toast.success('Copied to Clipboard!!')
+    }
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <header className="border-b border-gray-200 dark:border-gray-800">
@@ -273,7 +280,7 @@ export default function PromptLibrary() {
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2 cursor-pointer">
                   <Filter className="h-4 w-4" />
                   Filter
                 </Button>
@@ -305,7 +312,7 @@ export default function PromptLibrary() {
               }}
               defaultValue="newest"
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[180px] cursor-pointer">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -353,7 +360,7 @@ export default function PromptLibrary() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
                     onClick={() => handleVote(prompt.id, "like")}
                   >
                     <ThumbsUp className="h-4 w-4" fill="#50C878" />
@@ -362,14 +369,14 @@ export default function PromptLibrary() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
                     onClick={() => handleVote(prompt.id, "dislike")}
                   >
                     <ThumbsDown className="h-4 w-4" fill="red" />
                     <span>{prompt.dislikes}</span>
                   </Button>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="cursor-pointer" onClick={handleCopy}>
                   Copy
                 </Button>
               </CardFooter>
