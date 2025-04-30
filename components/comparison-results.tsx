@@ -46,17 +46,17 @@ function ModelCard({
       <CardHeader className="pb-2">
         <CardTitle className="text-md">{title}</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="flex-1 ">
         {isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
+          <div className="space-y-2 ">
+            <Skeleton className="h-4 w-full " />
             <Skeleton className="h-4 w-[90%]" />
             <Skeleton className="h-4 w-[95%]" />
             <Skeleton className="h-4 w-[85%]" />
             <Skeleton className="h-4 w-[90%]" />
           </div>
         ) : (
-          <div className="whitespace-pre-wrap text-sm border-2 bg-gray-800 text-white p-7 rounded-2xl">
+          <div className="whitespace-pre-wrap text-sm border-2 bg-gray-800 text-white p-7 rounded-2xl overflow-y-auto ">
             <Markdown>
               {content || ""}
             </Markdown>

@@ -1,20 +1,26 @@
 "use server";
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import Groq from "groq-sdk";
 
 const groq = new Groq({
-  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY
+  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
 });
 
-const MODELS = ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'gemma2-9b-it'];
+const MODELS = [
+  { name: "llama-3.3-70b-versatile", label: "Model 1 (LLaMA 3.3 70B)" },
+  { name: "llama3-70b-8192", label: "Model 2 (LLaMA 70B 8192)" },
+  { name: "gemma2-9b-it", label: "Model 3 (Gemma 9B IT)" },
+];
 
 export async function POST(req: NextRequest) {
   try {
     const { prompt } = await req.json();
 
-    if (!prompt || typeof prompt !== 'string') {
-      return new Response(JSON.stringify({ error: "Invalid prompt" }), { status: 400 });
+    if (!prompt || typeof prompt !== "string") {
+      return new Response(JSON.stringify({ error: "Invalid prompt" }), {
+        status: 400,
+      });
     }
 
     const fineTunedPrompt = `You are an advanced AI assistant with a vast knowledge base, capable of providing precise, relevant, and insightful responses. Based on the following user input, generate a well-structured, clear, and accurate response.
@@ -23,68 +29,51 @@ User Input:
 "${prompt}"
 
 Instructions:
+- Understand the context and intent.
+- Provide a direct, clear, and correct answer.
+- Add concise context where useful.
+- Remain professional and easy to follow.
+`;
 
-Interpret the user's request fully to understand the context, intent, and any underlying nuances.
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
 
-Provide a direct, accurate answer, ensuring clarity and conciseness.
+        for (const { name, label } of MODELS) {
+          // Write model label
+          controller.enqueue(encoder.encode(`\n\n--- ${label} ---\n\n`));
 
-If necessary, include additional explanations or context for clarity without overwhelming the user.
+          const responseStream = await groq.chat.completions.create({
+            model: name,
+            messages: [
+              { role: "system", content: fineTunedPrompt },
+              { role: "user", content: prompt },
+            ],
+            stream: true,
+          });
 
-Prioritize factual correctness and avoid speculation.
-
-Ensure the tone is professional, approachable, and user-friendly.
-
-If the query is ambiguous or requires assumptions, clarify or explain the possible interpretations and your response accordingly.
-
-Avoid redundancy and aim for a well-organized, easy-to-read response (e.g., structured with bullet points or paragraphs if appropriate).`
-
-    const responses = await Promise.all(
-      MODELS.map(async (model) => {
-        const stream = await groq.chat.completions.create({
-          model,
-          messages: [
-            {
-              role: "system",
-              content: fineTunedPrompt,
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-          stream: true,
-        });
-
-        let responseContent = "";
-        for await (const chunk of stream) {
-          const delta = chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.delta?.content;
-          if (delta) {
-            responseContent += delta;
+          for await (const chunk of responseStream) {
+            const content = chunk.choices?.[0]?.delta?.content;
+            if (content) {
+              controller.enqueue(encoder.encode(content));
+            }
           }
         }
 
-        return {
-          model,
-          response: responseContent,
-        };
-      })
-    );
+        controller.close();
+      },
+    });
 
-    const result = {
-      model1: responses[0].response,
-      model2: responses[1].response,
-      model3: responses[2].response,
-    };
-
-    return NextResponse.json(result);
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+      },
+    });
   } catch (error) {
-    console.error('Error in compare API: ', error);
-    return NextResponse.json({
-      error: 'Internal Server Error'
-    }, {
-      status: 500
-    })
-
+    console.error("Error in multi-model stream API:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+    });
   }
-
 }
