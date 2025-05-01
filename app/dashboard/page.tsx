@@ -52,6 +52,7 @@ export default function Dashboard() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="recent">Recent Prompts</TabsTrigger>
+                <TabsTrigger value="prompts">My Prompts</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -155,6 +156,46 @@ export default function Dashboard() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Recent Prompts</CardTitle>
+                    <CardDescription>Your recently created and enhanced prompts</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex flex-col space-y-2 rounded-md border p-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-medium">Prompt #{i}</h3>
+                          <p className="text-xs text-muted-foreground">2 days ago</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {i === 1
+                            ? "Create a detailed tutorial on prompt engineering techniques..."
+                            : i === 2
+                              ? "Compare the output of GPT-4 and Claude for this specific task..."
+                              : "Generate a creative story about artificial intelligence in the year 2050..."}
+                        </p>
+                        <div className="flex items-center space-x-2 pt-2">
+                          <Button variant="outline" size="sm">
+                            View
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                  <CardFooter>
+                    <Button variant="outline" className="w-full">
+                      View All Prompts
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="prompts" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Prompts created by you</CardTitle>
                     <CardDescription>Your recently created and enhanced prompts</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
