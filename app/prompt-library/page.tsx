@@ -40,70 +40,6 @@ import { toast } from "sonner"
 import supabase from "@/lib/supabase"
 import { useSession } from "next-auth/react"
 
-// Sample data for prompts
-const initialPrompts = [
-    {
-        id: 1,
-        title: "Creative Story Generator",
-        description: "Generate a creative short story based on a few keywords",
-        promptText:
-            "Write a short story that includes the following elements: [KEYWORDS]. The story should be approximately 500 words and have a surprising twist at the end.",
-        niche: "Creative Writing",
-        likes: 42,
-        dislikes: 5,
-    },
-    {
-        id: 2,
-        title: "Technical Blog Post Outline",
-        description: "Create an outline for a technical blog post",
-        promptText:
-            "Create a detailed outline for a technical blog post about [TOPIC]. Include an introduction, at least 5 main sections with 2-3 subsections each, and a conclusion. For each section, provide a brief description of what should be covered.",
-        niche: "Technical Writing",
-        likes: 38,
-        dislikes: 3,
-    },
-    {
-        id: 3,
-        title: "Product Description Generator",
-        description: "Generate compelling product descriptions for e-commerce",
-        promptText:
-            "Write a compelling product description for [PRODUCT]. The description should be approximately 200 words, highlight the key features and benefits, and include a strong call to action. The tone should be [TONE].",
-        niche: "Marketing",
-        likes: 65,
-        dislikes: 8,
-    },
-    {
-        id: 4,
-        title: "Code Refactoring Assistant",
-        description: "Get suggestions for refactoring code",
-        promptText:
-            "Review the following code and suggest ways to refactor it for better readability, performance, and maintainability: [CODE]. Explain your reasoning for each suggestion and provide examples of the refactored code.",
-        niche: "Programming",
-        likes: 87,
-        dislikes: 4,
-    },
-    {
-        id: 5,
-        title: "Email Newsletter Template",
-        description: "Generate a template for email newsletters",
-        promptText:
-            "Create a template for a [TYPE] email newsletter. Include sections for introduction, main content (at least 3 sections), and conclusion. Provide placeholder text for each section and suggestions for subject lines.",
-        niche: "Marketing",
-        likes: 51,
-        dislikes: 7,
-    },
-    {
-        id: 6,
-        title: "Interview Question Generator",
-        description: "Generate interview questions for specific roles",
-        promptText:
-            "Generate 10 interview questions for a [POSITION] role. Include a mix of technical questions, behavioral questions, and situational questions. For each question, provide what a good answer might include.",
-        niche: "HR",
-        likes: 29,
-        dislikes: 2,
-    },
-]
-
 interface Prompt {
     id: number;
     title: string;
@@ -112,7 +48,7 @@ interface Prompt {
     niche: string;
     likes: number;
     dislikes: number;
-  }
+}
 
 // Available niches for filtering
 const niches = ["All", "Creative Writing", "Technical Writing", "Marketing", "Programming", "HR"]
@@ -124,6 +60,8 @@ export default function PromptLibrary() {
     const [sortBy, setSortBy] = useState("newest")
     const { data: session } = useSession();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
+
 
     useEffect(() => {
         const fetchPrompts = async () => {
@@ -140,8 +78,8 @@ export default function PromptLibrary() {
                 // Transform backend prompt shape to match frontend expectations
                 const formatted = data?.map((prompt: any, index: number) => ({
                     id: prompt?.id || index + 1,
-                    title: prompt?.title,
-                    description: prompt?.description,
+                    title: prompt?.prompt_title,
+                    description: prompt?.prompt_description,
                     promptText: prompt?.promptText,
                     niche: prompt?.niche,
                     likes: prompt?.likes || 0,
@@ -150,6 +88,10 @@ export default function PromptLibrary() {
 
                 setPrompts(formatted);
                 setFilteredPrompts(formatted);
+                setLoading(false);
+
+                console.log(data);
+                
             } catch (error) {
                 console.error("Failed to fetch prompts", error);
                 toast.error("Failed to load prompts. Try again later.");
@@ -267,6 +209,16 @@ export default function PromptLibrary() {
     }
 
 
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white">
+                <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+            </div>
+
+        );
+    }
+
+
     return (
         <div className="min-h-screen bg-white dark:bg-gray-950">
             <header className="border-b border-gray-200 dark:border-gray-800">
@@ -297,7 +249,7 @@ export default function PromptLibrary() {
                                             <Input
                                                 id="title"
                                                 placeholder="Enter a descriptive title"
-                                                value={newPrompt.title}
+                                                value={newPrompt?.title}
                                                 onChange={(e) => setNewPrompt({ ...newPrompt, title: e.target.value })}
                                             />
                                         </div>
@@ -306,7 +258,7 @@ export default function PromptLibrary() {
                                             <Input
                                                 id="description"
                                                 placeholder="Brief description of what this prompt does"
-                                                value={newPrompt.description}
+                                                value={newPrompt?.description}
                                                 onChange={(e) => setNewPrompt({ ...newPrompt, description: e.target.value })}
                                             />
                                         </div>
@@ -316,7 +268,7 @@ export default function PromptLibrary() {
                                                 id="promptText"
                                                 placeholder="Enter the actual prompt text here"
                                                 className="min-h-[100px]"
-                                                value={newPrompt.promptText}
+                                                value={newPrompt?.promptText}
                                                 onChange={(e) => setNewPrompt({ ...newPrompt, promptText: e.target.value })}
                                             />
                                         </div>
@@ -324,7 +276,7 @@ export default function PromptLibrary() {
                                             <Label htmlFor="niche">Niche</Label>
                                             <Select
                                                 onValueChange={(value) => setNewPrompt({ ...newPrompt, niche: value })}
-                                                value={newPrompt.niche}
+                                                value={newPrompt?.niche}
                                             >
                                                 <SelectTrigger id="niche">
                                                     <SelectValue placeholder="Select a niche" />
@@ -429,7 +381,7 @@ export default function PromptLibrary() {
                             <CardHeader>
                                 <div className="flex items-start justify-between">
                                     <div>
-                                        <CardTitle className="line-clamp-1">{prompt?.title}</CardTitle>
+                                        <CardTitle className="line-clamp-1 text-base font-semibold text-black dark:text-white">{prompt?.title}</CardTitle>
                                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{prompt?.description}</p>
                                     </div>
                                     <Badge variant="outline">{prompt?.niche}</Badge>
