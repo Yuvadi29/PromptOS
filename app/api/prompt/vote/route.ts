@@ -5,22 +5,32 @@ export async function POST(req: Request) {
   try {
     const { promptId, type } = await req.json();
 
-    if (!promptId || !["like", "dislike"].includes(type)) {
+    if (!promptId || !["likes", "dislikes"].includes(type)) {
       return NextResponse.json({ message: "Invalid data" }, { status: 400 });
     }
 
-    const field = type === "like" ? "likes" : "dislikes";
+    const field = type === "likes" ? "likes" : "dislikes";
 
-    const { error } = await supabase.rpc(`increment_${field}`, {
-      prompt_id: promptId,
-    });
+    if (type === "likes") {
+      let { data, error } = await supabase
+        .rpc('increment_likes', {
+          promptid: promptId
+        })
+      if (error) console.error(error)
+    } else {
 
-    if (error) {
-      return NextResponse.json({ message: error.message }, { status: 500 });
+      let { data, error } = await supabase
+        .rpc('increment_dislikes', {
+          promptid: promptId
+        })
+      if (error) console.error(error)
     }
+
+    console.log(`[RPC SUCCESS]: ${field} incremented for prompt_id ${promptId}`);
 
     return NextResponse.json({ message: `${type} registered` }, { status: 200 });
   } catch (error) {
+    console.error("[SERVER ERROR]:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

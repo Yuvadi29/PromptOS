@@ -104,16 +104,60 @@ const initialPrompts = [
     },
 ]
 
+interface Prompt {
+    id: number;
+    title: string;
+    description: string;
+    promptText: string;
+    niche: string;
+    likes: number;
+    dislikes: number;
+  }
+
 // Available niches for filtering
 const niches = ["All", "Creative Writing", "Technical Writing", "Marketing", "Programming", "HR"]
 
 export default function PromptLibrary() {
-    const [prompts, setPrompts] = useState(initialPrompts)
-    const [filteredPrompts, setFilteredPrompts] = useState(initialPrompts)
+    const [prompts, setPrompts] = useState<Prompt[]>([])
+    const [filteredPrompts, setFilteredPrompts] = useState<Prompt[]>([])
     const [selectedNiche, setSelectedNiche] = useState("All")
     const [sortBy, setSortBy] = useState("newest")
     const { data: session } = useSession();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchPrompts = async () => {
+            try {
+                const response = await fetch("/api/prompt-library", {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                const data = await response.json();
+
+                // Transform backend prompt shape to match frontend expectations
+                const formatted = data.map((prompt: any, index: number) => ({
+                    id: prompt.id || index + 1,
+                    title: prompt.title,
+                    description: prompt.description,
+                    promptText: prompt.promptText,
+                    niche: prompt.niche,
+                    likes: prompt.likes || 0,
+                    dislikes: prompt.dislikes || 0,
+                }));
+
+                setPrompts(formatted);
+                setFilteredPrompts(formatted);
+            } catch (error) {
+                console.error("Failed to fetch prompts", error);
+                toast.error("Failed to load prompts. Try again later.");
+            }
+        };
+
+        fetchPrompts();
+    }, []);
 
     // Form state for creating a new prompt
     const [newPrompt, setNewPrompt] = useState({
@@ -151,7 +195,7 @@ export default function PromptLibrary() {
             body: JSON.stringify(createdPrompt),
         });
 
-        if(!res.ok) return toast.error("Failed to save prompt!! Please try again");
+        if (!res.ok) return toast.error("Failed to save prompt!! Please try again");
 
         const savedPrompt = {
             ...createdPrompt,
@@ -194,32 +238,31 @@ export default function PromptLibrary() {
     }
 
     // Handle like/dislike
-    const handleVote = async(id: number, type: "like" | "dislike") => {
-       const res = await fetch("/api/prompt/vote", {
-        method: "POST",
-        body: JSON.stringify({promptId: id, type}),
-       });
+    const handleVote = async (id: number, type: "likes" | "dislikes") => {
+        const res = await fetch("/api/prompt/vote", {
+            method: "POST",
+            body: JSON.stringify({ promptId: id, type }),
+        });
 
-       if(!res.ok) return toast.error("Failed to register vote. Try again later");
+        if (!res.ok) return toast.error("Failed to register vote. Try again later");
 
-       const updatedPrompts = prompts?.map((prompt) => {
-        if(prompt?.id === id){
-            return {
-                ...prompt,
-                likes: type === "like" ? prompt?.likes + 1 : prompt?.likes,
-                dislikes: type === "dislike" ? prompt?.dislikes + 1 :prompt?.dislikes,
-            };
-        }
-        return prompt;
-       })
+        const updatedPrompts = prompts?.map((prompt) => {
+            if (prompt?.id === id) {
+                return {
+                    ...prompt,
+                    likes: type === "likes" ? prompt?.likes + 1 : prompt?.likes,
+                    dislikes: type === "dislikes" ? prompt?.dislikes + 1 : prompt?.dislikes,
+                };
+            }
+            return prompt;
+        })
 
         setPrompts(updatedPrompts)
         filterPrompts(selectedNiche, sortBy)
     }
 
-    const handleCopy = () => {
-        // if (response) {
-        //   navigator.clipboard.writeText(response)
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text)
         toast.success('Copied to Clipboard!!')
     }
 
@@ -403,7 +446,7 @@ export default function PromptLibrary() {
                                         variant="ghost"
                                         size="sm"
                                         className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
-                                        onClick={() => handleVote(prompt.id, "like")}
+                                        onClick={() => handleVote(prompt.id, "likes")}
                                     >
                                         <ThumbsUp className="h-4 w-4" fill="#50C878" />
                                         <span>{prompt.likes}</span>
@@ -412,13 +455,13 @@ export default function PromptLibrary() {
                                         variant="ghost"
                                         size="sm"
                                         className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
-                                        onClick={() => handleVote(prompt.id, "dislike")}
+                                        onClick={() => handleVote(prompt.id, "dislikes")}
                                     >
                                         <ThumbsDown className="h-4 w-4" fill="red" />
                                         <span>{prompt.dislikes}</span>
                                     </Button>
                                 </div>
-                                <Button variant="outline" size="sm" className="cursor-pointer" onClick={handleCopy}>
+                                <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => handleCopy(prompt?.promptText)}>
                                     Copy
                                 </Button>
                             </CardFooter>
