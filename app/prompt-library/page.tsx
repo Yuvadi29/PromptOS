@@ -78,6 +78,7 @@ export default function PromptLibrary() {
                 // Transform backend prompt shape to match frontend expectations
                 const formatted = data?.map((prompt: any, index: number) => ({
                     id: prompt?.id || index + 1,
+                    createdBy: prompt?.created_by,
                     title: prompt?.prompt_title,
                     description: prompt?.prompt_description,
                     promptText: prompt?.promptText,
@@ -97,6 +98,14 @@ export default function PromptLibrary() {
                 toast.error("Failed to load prompts. Try again later.");
             }
         };
+
+        const getUserNameFromId = async () => {
+            try {
+                
+            } catch (error) {
+                
+            }
+        }
 
         fetchPrompts();
     }, []);
@@ -207,7 +216,6 @@ export default function PromptLibrary() {
         navigator.clipboard.writeText(text)
         toast.success('Copied to Clipboard!!')
     }
-
 
     if (loading) {
         return (

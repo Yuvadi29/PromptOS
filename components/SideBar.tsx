@@ -12,24 +12,29 @@ const items = [
   {
     title: "Prompt Enhancer",
     url: "/enhance",
-    icon: Settings2Icon
+    icon: Settings2Icon,
+    color: 'text-purple-600'
   },
   {
     title: "LLM Output Comparison",
     url: "/compare-llm",
-    icon: GitCompareIcon
+    icon: GitCompareIcon,
+    color: 'text-blue-600'
   },
   {
     title: "Prompt Library",
     url: "/prompt-library",
-    icon: LibraryIcon
+    icon: LibraryIcon,
+    color: 'text-green-600'
   }, 
   {
     title: 'Dashboard',
     url: "/dashboard",
-    icon: HomeIcon
+    icon: HomeIcon,
+    color: 'text-red-600'
   }
 ];
+
 
 type User = {
   name?: string;
@@ -50,9 +55,6 @@ const SideBar = ({ user }: SideBarProps) => {
 
   return (
     <Sidebar className="relative">
-      {/* Trigger positioned at top-right corner */}
-      {/* <SidebarTrigger className='absolute top-2 -right-9 rounded-full p-2'/> */}
-
       {/* Top Section */}
       <div className='flex-1 overflow-y-auto'>
         <SidebarHeader />
@@ -67,7 +69,7 @@ const SideBar = ({ user }: SideBarProps) => {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <Link href={item.url}>
-                        <item.icon className="mr-2" />
+                        <item.icon className={`mr-2 ${item.color} stroke-3`} />
                         <span className="font-medium">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
