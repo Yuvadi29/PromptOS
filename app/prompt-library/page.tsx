@@ -138,14 +138,14 @@ export default function PromptLibrary() {
                 const data = await response.json();
 
                 // Transform backend prompt shape to match frontend expectations
-                const formatted = data.map((prompt: any, index: number) => ({
-                    id: prompt.id || index + 1,
-                    title: prompt.title,
-                    description: prompt.description,
-                    promptText: prompt.promptText,
-                    niche: prompt.niche,
-                    likes: prompt.likes || 0,
-                    dislikes: prompt.dislikes || 0,
+                const formatted = data?.map((prompt: any, index: number) => ({
+                    id: prompt?.id || index + 1,
+                    title: prompt?.title,
+                    description: prompt?.description,
+                    promptText: prompt?.promptText,
+                    niche: prompt?.niche,
+                    likes: prompt?.likes || 0,
+                    dislikes: prompt?.dislikes || 0,
                 }));
 
                 setPrompts(formatted);
@@ -374,7 +374,7 @@ export default function PromptLibrary() {
                                 <DropdownMenuLabel>Filter by Niche</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuGroup>
-                                    {niches.map((niche) => (
+                                    {niches?.map((niche) => (
                                         <DropdownMenuItem
                                             key={niche}
                                             onClick={() => {
@@ -424,20 +424,20 @@ export default function PromptLibrary() {
                 </div>
 
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {filteredPrompts.map((prompt) => (
-                        <Card key={prompt.id} className="flex flex-col">
+                    {filteredPrompts?.map((prompt) => (
+                        <Card key={prompt?.id} className="flex flex-col">
                             <CardHeader>
                                 <div className="flex items-start justify-between">
                                     <div>
-                                        <CardTitle className="line-clamp-1">{prompt.title}</CardTitle>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{prompt.description}</p>
+                                        <CardTitle className="line-clamp-1">{prompt?.title}</CardTitle>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{prompt?.description}</p>
                                     </div>
-                                    <Badge variant="outline">{prompt.niche}</Badge>
+                                    <Badge variant="outline">{prompt?.niche}</Badge>
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-grow">
                                 <div className="rounded-md bg-gray-50 dark:bg-gray-900 p-3 text-sm">
-                                    <p className="line-clamp-6 font-mono">{prompt.promptText}</p>
+                                    <p className="line-clamp-6 font-mono">{prompt?.promptText}</p>
                                 </div>
                             </CardContent>
                             <CardFooter className="flex justify-between border-t pt-4">
@@ -446,7 +446,7 @@ export default function PromptLibrary() {
                                         variant="ghost"
                                         size="sm"
                                         className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
-                                        onClick={() => handleVote(prompt.id, "likes")}
+                                        onClick={() => handleVote(prompt?.id, "likes")}
                                     >
                                         <ThumbsUp className="h-4 w-4" fill="#50C878" />
                                         <span>{prompt.likes}</span>
@@ -455,10 +455,10 @@ export default function PromptLibrary() {
                                         variant="ghost"
                                         size="sm"
                                         className="gap-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 cursor-pointer"
-                                        onClick={() => handleVote(prompt.id, "dislikes")}
+                                        onClick={() => handleVote(prompt?.id, "dislikes")}
                                     >
                                         <ThumbsDown className="h-4 w-4" fill="red" />
-                                        <span>{prompt.dislikes}</span>
+                                        <span>{prompt?.dislikes}</span>
                                     </Button>
                                 </div>
                                 <Button variant="outline" size="sm" className="cursor-pointer" onClick={() => handleCopy(prompt?.promptText)}>
@@ -469,7 +469,7 @@ export default function PromptLibrary() {
                     ))}
                 </div>
 
-                {filteredPrompts.length === 0 && (
+                {filteredPrompts?.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
                         <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-3">
                             <Filter className="h-6 w-6 text-gray-400" />
