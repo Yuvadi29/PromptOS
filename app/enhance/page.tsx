@@ -7,7 +7,6 @@ import { Copy, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
 import supabase from '@/lib/supabase'
-import { useUser } from '@/context/UserContext'
 
 export default function PromptEnhancer() {
   const [input1, setInput1] = useState('')
@@ -16,6 +15,14 @@ export default function PromptEnhancer() {
   const input2Ref = useRef<HTMLTextAreaElement>(null)
   const { data: session } = useSession();
   const [showFeedback, setShowFeedback] = useState(false);
+
+  type Score = {
+    clarity: number;
+    specificity: number;
+    model_fit: number;
+    tip: string;
+  };
+  const [score, setScore] = useState<Score | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,6 +50,7 @@ export default function PromptEnhancer() {
     }
 
     setIsLoading(false)
+    handleScoring(response);
   }
 
   useEffect(() => {
@@ -84,6 +92,9 @@ export default function PromptEnhancer() {
             body: JSON.stringify({
               userId: userData?.id,
               prompt: response,
+              // clarity: score?.clarity,
+              // specificity: score?.specificity,
+              // model_fit: score?.model_fit,
             }),
           });
 
@@ -159,6 +170,27 @@ export default function PromptEnhancer() {
     }
   };
 
+  const handleScoring = async (enhancedPrompt: string) => {
+    try {
+      const res = await fetch('/api/score-prompt', {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: enhancedPrompt,
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setScore(data);
+      } else {
+        console.warn("Scoring Failed.");
+      }
+    } catch (error) {
+      console.error("Error scoring prompt:", error);
+    }
+  }
+
 
   return (
     <SidebarProvider>
@@ -221,23 +253,40 @@ export default function PromptEnhancer() {
             <AnimatePresence>
               {showFeedback && (
                 <motion.div
-                key="feedback"
-                initial={{opacity:0, scale: 0.8}}
-                animate={{opacity:1, scale:1}}
-                exit={{opacity: 0}}
-                transition={{duration: 0.5}}
-                className='w-full flex flex-col items-center gap-4 p-6 bg-white border border-gray-200 rounded-2xl shadow-lg mt-4'
+                  key="feedback"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className='w-full flex flex-col items-center gap-4 p-6 bg-white border border-gray-200 rounded-2xl shadow-lg mt-4'
                 >
-                    <h2 className=' text-lg text-gray-700'>Are you happy with the response given by AI?</h2>
-                    <div className="flex gap-8">
+                  <h2 className=' text-lg text-gray-700'>Are you happy with the response given by AI?</h2>
+                  <div className="flex gap-8">
 
-                    <ThumbsUpIcon style={{ color: 'green' }} size={36} onClick={handlePositiveFeedback} className='hover:scale-110 transition cursor-pointer'/>
-                    <ThumbsDownIcon style={{ color: 'red' }} size={36} onClick={handleNegativeFeedback} className='hover:scale-110 transition cursor-pointer'/>
-                    </div>
+                    <ThumbsUpIcon style={{ color: 'green' }} size={36} onClick={handlePositiveFeedback} className='hover:scale-110 transition cursor-pointer' />
+                    <ThumbsDownIcon style={{ color: 'red' }} size={36} onClick={handleNegativeFeedback} className='hover:scale-110 transition cursor-pointer' />
+                  </div>
 
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {score && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="w-full bg-white border rounded-2xl shadow p-4 mt-4 text-left"
+              >
+                <h4 className="font-semibold text-lg mb-2">🧠 Prompt Quality Score</h4>
+                <ul className="text-gray-700 text-sm space-y-1">
+                  <li><strong>Clarity:</strong> {score?.clarity}/10</li>
+                  <li><strong>Specificity:</strong> {score?.specificity}/10</li>
+                  <li><strong>Model Fit:</strong> {score?.model_fit}/10</li>
+                </ul>
+                <p className="text-gray-600 italic mt-2">💡 {score?.tip}</p>
+              </motion.div>
+            )}
 
 
             {/* Loading Animation */}

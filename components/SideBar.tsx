@@ -1,7 +1,7 @@
 'use client';
 
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from './ui/sidebar';
-import { GitCompareIcon, HomeIcon, LibraryIcon, LogOutIcon, Settings2Icon } from 'lucide-react';
+import { CircleGaugeIcon, GitCompareIcon, HomeIcon, LibraryIcon, LogOutIcon, Settings2Icon } from 'lucide-react';
 import Link from 'next/link';
 import ProfileModal from './ProfileModal';
 import { signOut } from 'next-auth/react';
@@ -27,6 +27,12 @@ const items = [
     icon: LibraryIcon,
     color: 'text-green-600'
   }, 
+  {
+    title: "Prompt Scoring",
+    url: "/prompt-scoring",
+    icon: CircleGaugeIcon,
+    color: 'text-orange-600'
+  },
   {
     title: 'Dashboard',
     url: "/dashboard",
