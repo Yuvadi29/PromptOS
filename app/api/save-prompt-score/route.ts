@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
     try {
-        const { userId, prompt} = await req.json();
+        const { userId, prompt, clarity, specificity, model_fit, relevance, structure, conciseness } = await req.json();
 
         if (!userId || !prompt) {
             return NextResponse.json({
@@ -11,19 +11,23 @@ export async function POST(req: Request) {
             }, { status: 400 });
         }
 
-        // Save to db
-        await supabase.from("prompts").insert({
+        await supabase.from("prompt_scores").insert({
             created_by: userId,
-            prompt_value: prompt,
+            prompt,
+            clarity,
+            specificity,
+            model_fit,
+            relevance,
+            structure,
+            conciseness
         });
 
         return NextResponse.json({
             message: 'Prompt Saved Successfully'
-        }, {
-            status: 200
-        })
-    } catch (error) {
-        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+        }, { status: 200 });
 
+    } catch (error) {
+        console.error('Server Error:', error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }

@@ -29,10 +29,10 @@ const getScoreColor = (score: number) => {
 };
 
 const getScoreLabel = (score: number) => {
-  if (score >= 80) return "Excellent";
-  if (score >= 60) return "Good";
-  if (score >= 40) return "Fair";
-  return "Needs Improvement";
+  if (score >= 80) return "🌟 Excellent";
+  if (score >= 60) return "👍 Good";
+  if (score >= 40) return "⚠️ Fair";
+  return "❗Needs Improvement";
 };
 
 const ScoreCard: React.FC<ScoreCardProps> = ({ score }) => {
@@ -43,9 +43,13 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ score }) => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           Your Prompt Score
-          <Badge className={`text-white ${getScoreColor(overallScore)}`}>
-            {overallScore}/100
+          <Badge
+            className={`text-white ${getScoreColor(overallScore)}`}
+            title={`Overall score: ${overallScore}`}
+          >
+            {overallScore}/10
           </Badge>
+
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -59,13 +63,13 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ score }) => {
 
         <div className="space-y-4">
           <h3 className="font-medium">Criteria Breakdown</h3>
-          {criteriaScores && Object.entries(criteriaScores).map(([criterion, score]) => (
+          {criteriaScores && Object.entries(criteriaScores)?.map(([criterion, score]) => (
             <div key={criterion} className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="capitalize">{criterion.replace("_", " ")}</span>
-                <span>{score * 10}/100</span>
+                <span className="capitalize">{criterion.replace(/_/g, " ")}</span>
+                <span>{score}/10</span>
               </div>
-              <Progress value={score * 10} className={getScoreColor(score)} />
+              <Progress value={score *10} className={getScoreColor(score *10 )} />
             </div>
           ))}
         </div>

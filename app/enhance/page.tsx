@@ -16,14 +16,6 @@ export default function PromptEnhancer() {
   const { data: session } = useSession();
   const [showFeedback, setShowFeedback] = useState(false);
 
-  type Score = {
-    clarity: number;
-    specificity: number;
-    model_fit: number;
-    tip: string;
-  };
-  const [score, setScore] = useState<Score | null>(null);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setResponse('')
@@ -50,7 +42,6 @@ export default function PromptEnhancer() {
     }
 
     setIsLoading(false)
-    handleScoring(response);
   }
 
   useEffect(() => {
@@ -92,9 +83,6 @@ export default function PromptEnhancer() {
             body: JSON.stringify({
               userId: userData?.id,
               prompt: response,
-              // clarity: score?.clarity,
-              // specificity: score?.specificity,
-              // model_fit: score?.model_fit,
             }),
           });
 
@@ -169,28 +157,6 @@ export default function PromptEnhancer() {
       toast.error('Something went wrong.');
     }
   };
-
-  const handleScoring = async (enhancedPrompt: string) => {
-    try {
-      const res = await fetch('/api/score-prompt', {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: enhancedPrompt,
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setScore(data);
-      } else {
-        console.warn("Scoring Failed.");
-      }
-    } catch (error) {
-      console.error("Error scoring prompt:", error);
-    }
-  }
-
 
   return (
     <SidebarProvider>
