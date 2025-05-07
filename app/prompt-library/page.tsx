@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { ReactNode, useEffect, useState } from "react"
 import { Filter, Plus, ThumbsDown, ThumbsUp } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -39,8 +39,10 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import supabase from "@/lib/supabase"
 import { useSession } from "next-auth/react"
+import Link from "next/link"
 
 interface Prompt {
+    [x: string]: ReactNode
     id: number;
     title: string;
     description: string;
@@ -63,9 +65,59 @@ export default function PromptLibrary() {
     const [loading, setLoading] = useState(true);
 
 
+    // useEffect(() => {
+    //     const fetchPrompts = async () => {
+    //         try {
+    //             const response = await fetch("/api/prompt-library", {
+    //                 method: "GET",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                 },
+    //             });
+
+    //             const data = await response.json();
+
+    //             // Transform backend prompt shape to match frontend expectations
+    //             const formatted = data?.map((prompt: any, index: number) => ({
+    //                 id: prompt?.id || index + 1,
+    //                 createdBy: prompt?.created_by,
+    //                 title: prompt?.prompt_title,
+    //                 description: prompt?.prompt_description,
+    //                 promptText: prompt?.promptText,
+    //                 niche: prompt?.niche,
+    //                 likes: prompt?.likes || 0,
+    //                 dislikes: prompt?.dislikes || 0,
+    //             }));
+
+    //             setPrompts(formatted);
+    //             setFilteredPrompts(formatted);
+    //             setLoading(false);
+
+    //             console.log(data);
+
+    //         } catch (error) {
+    //             console.error("Failed to fetch prompts", error);
+    //             toast.error("Failed to load prompts. Try again later.");
+    //         }
+    //     };
+
+    //     const getUserNameFromId = async () => {
+    //         try {
+    //             const name = await data.
+    //         } catch (error) {
+
+    //         }
+    //     }
+
+    //     fetchPrompts();
+    // }, []);
+
+    // Form state for creating a new prompt
+
     useEffect(() => {
-        const fetchPrompts = async () => {
+        const fetchPromptsWithUsernames = async () => {
             try {
+                // 1. Fetch prompts
                 const response = await fetch("/api/prompt-library", {
                     method: "GET",
                     headers: {
@@ -75,10 +127,29 @@ export default function PromptLibrary() {
 
                 const data = await response.json();
 
-                // Transform backend prompt shape to match frontend expectations
+                // 2. Extract user IDs
+                const userIds = [...new Set(data.map((prompt: any) => prompt.created_by))];
+
+                // 3. Fetch user info in batch
+                const { data: usersData, error: usersError } = await supabase
+                    .from("users")
+                    .select("id, name, username") // assuming `name` is the column for username
+                    .in("id", userIds);
+
+                if (usersError) {
+                    console.error("Error fetching user data:", usersError);
+                    toast.error("Failed to load user info.");
+                    return;
+                }
+
+                // 4. Create a map of userId -> username (or name)
+                const userMap = new Map(usersData.map(user => [user.id, user.username || user.name]));
+
+                // 5. Combine prompt + username
                 const formatted = data?.map((prompt: any, index: number) => ({
                     id: prompt?.id || index + 1,
                     createdBy: prompt?.created_by,
+                    createdByName: userMap?.get(prompt?.created_by) || "Unknown",
                     title: prompt?.prompt_title,
                     description: prompt?.prompt_description,
                     promptText: prompt?.promptText,
@@ -90,27 +161,16 @@ export default function PromptLibrary() {
                 setPrompts(formatted);
                 setFilteredPrompts(formatted);
                 setLoading(false);
-
-                console.log(data);
-                
             } catch (error) {
                 console.error("Failed to fetch prompts", error);
                 toast.error("Failed to load prompts. Try again later.");
             }
         };
 
-        const getUserNameFromId = async () => {
-            try {
-                
-            } catch (error) {
-                
-            }
-        }
-
-        fetchPrompts();
+        fetchPromptsWithUsernames();
     }, []);
 
-    // Form state for creating a new prompt
+
     const [newPrompt, setNewPrompt] = useState({
         title: "",
         description: "",
@@ -393,6 +453,9 @@ export default function PromptLibrary() {
                                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{prompt?.description}</p>
                                     </div>
                                     <Badge variant="outline">{prompt?.niche}</Badge>
+                                    <Link href={`/profile/${prompt?.createdByName}`}>
+                                        <span className="text-xs text-gray-400 ml-2">{prompt?.createdByName}</span>
+                                    </Link>
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-grow">
