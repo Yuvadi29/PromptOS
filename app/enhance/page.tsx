@@ -158,6 +158,15 @@ export default function PromptEnhancer() {
     }
   };
 
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+        </div>
+
+    );
+}
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full items-center justify-center bg-white p-6">

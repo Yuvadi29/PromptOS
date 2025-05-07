@@ -109,6 +109,14 @@ const Page = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+            <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+        </div>
+
+    );
+}
   return (
     <main className='container mx-auto px-4 py-12 max-w-4xl'>
       <h1 className="text-4xl font-bold text-center mb-8">Prompt Score</h1>

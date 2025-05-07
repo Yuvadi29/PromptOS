@@ -5,15 +5,28 @@ import { ArrowRight, BarChart3, BookMarked, Clock, Lightbulb, Sparkles, Star } f
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-// import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  CartesianGrid,
+} from "recharts";
+import {format} from "date-fns";
 
 export default function Dashboard() {
   const user = useUser();
   const [promptCount, setPromptCount] = useState<number>(0);
+  const [prompts, setPrompts] = useState<any[]>([]);
+  const [promptScores, setPromptScores] = useState<any[]>([]);
+
 
   useEffect(() => {
     const getPrompts = async () => {
@@ -28,11 +41,30 @@ export default function Dashboard() {
         .select('*', { count: 'exact' })
         .eq('created_by', userData?.id);
 
-        if(promptError){
-          console.log('Error Fetching Prompts: ', promptError);
-        } else {
-          setPromptCount(count || 0);
-        }
+      if (data) {
+        setPrompts(data);
+      } else {
+        setPrompts([]);
+      }
+
+      if (promptError) {
+        console.log('Error Fetching Prompts: ', promptError);
+      } else {
+        setPromptCount(count || 0);
+      }
+
+      const { data: promptScoreData, error: scoreError, count: promptScorecount } = await supabase
+        .from("prompt_scores")
+        .select('*', { count: 'exact' })
+        .eq('created_by', userData?.id)
+
+      if (promptScoreData) {
+        setPromptScores(promptScoreData);
+      } else {
+        setPromptScores([]);
+      }
+      console.log(promptScoreData);
+
     };
     getPrompts();
   }, [])
@@ -52,7 +84,7 @@ export default function Dashboard() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="recent">Recent Prompts</TabsTrigger>
-                <TabsTrigger value="prompts">My Prompts</TabsTrigger>
+                <TabsTrigger value="prompts">My Prompt Scores</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -143,11 +175,34 @@ export default function Dashboard() {
                     <CardTitle>Prompt Analytics</CardTitle>
                     <CardDescription>Detailed metrics about your prompt performance</CardDescription>
                   </CardHeader>
-                  <CardContent className="h-[400px] flex items-center justify-center">
-                    <div className="text-center space-y-3">
-                      <BarChart3 className="h-16 w-16 mx-auto text-muted" />
-                      <p className="text-muted-foreground">Analytics data will appear here</p>
-                    </div>
+                  <CardContent className="h-[400px] flex items-center justify-center mb-4">
+                    {promptScores?.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={promptScores.map((score) => ({
+                            ...score,
+                            created_at: format(new Date(score.created_at), "MMM d"),
+                          }))}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray={"3 3"} />
+                          <XAxis dataKey={"created_at"} />
+                          <YAxis domain={[0, 10]} />
+                          <Tooltip />
+                          <Legend />
+                          <Line type={"natural"} dataKey={"clarity"} stroke="#f97316" />
+                          <Line type={"natural"} dataKey={"conciseness"} stroke="#3b82f6" />
+                          <Line type={"natural"} dataKey={"relevance"} stroke="#22c55e" />
+                          <Line type={"natural"} dataKey={"specificity"} stroke="#facc15" />
+                          <Line type={"natural"} dataKey={"structure"} stroke="#f87171" />
+                          <Line type={"natural"} dataKey={"model_fit"} stroke="6b7280" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-muted-foreground">
+                        No prompt score data yet
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -159,18 +214,14 @@ export default function Dashboard() {
                     <CardDescription>Your recently created and enhanced prompts</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex flex-col space-y-2 rounded-md border p-4">
+                    {prompts?.map((prompt) => (
+                      <div key={prompt?.id} className="flex flex-col space-y-2 rounded-md border p-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Prompt #{i}</h3>
+                          <h3 className="font-medium">Prompt #{prompt?.id}</h3>
                           <p className="text-xs text-muted-foreground">2 days ago</p>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {i === 1
-                            ? "Create a detailed tutorial on prompt engineering techniques..."
-                            : i === 2
-                              ? "Compare the output of GPT-4 and Claude for this specific task..."
-                              : "Generate a creative story about artificial intelligence in the year 2050..."}
+                          {prompt?.prompt_value}
                         </p>
                         <div className="flex items-center space-x-2 pt-2">
                           <Button variant="outline" size="sm">
@@ -195,31 +246,35 @@ export default function Dashboard() {
               <TabsContent value="prompts" className="space-y-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Prompts created by you</CardTitle>
-                    <CardDescription>Your recently created and enhanced prompts</CardDescription>
+                    <CardTitle>Prompt Scores</CardTitle>
+                    <CardDescription>Your recently created and scored prompts</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex flex-col space-y-2 rounded-md border p-4">
+                    {promptScores?.map((p) => (
+                      <div key={p?.id} className="flex flex-col space-y-2 rounded-md border p-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Prompt #{i}</h3>
+                          <h3 className="font-medium">Prompt #{p?.id}</h3>
                           <p className="text-xs text-muted-foreground">2 days ago</p>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {i === 1
-                            ? "Create a detailed tutorial on prompt engineering techniques..."
-                            : i === 2
-                              ? "Compare the output of GPT-4 and Claude for this specific task..."
-                              : "Generate a creative story about artificial intelligence in the year 2050..."}
+                          {p?.prompt}
                         </p>
-                        <div className="flex items-center space-x-2 pt-2">
+                        <div className="flex items-center justify-center gap-5">
+                          <span className="text-md text-orange-600 font-medium">Clarity: {p?.clarity}</span>
+                          <span className="text-md text-blue-600 font-medium">Conciseness: {p?.conciseness}</span>
+                          <span className="text-md text-green-600 font-medium">Relevance: {p?.relevance}</span>
+                          <span className="text-md text-amber-500 font-medium">Specificity: {p?.specificity}</span>
+                          <span className="text-md text-red-400 font-medium">Structure: {p?.structure}</span>
+                          <span className="text-md text-gray-600 font-medium">Model Fit: {p?.model_fit}</span>
+                        </div>
+                        {/* <div className="flex items-center space-x-2 pt-2">
                           <Button variant="outline" size="sm">
                             View
                           </Button>
                           <Button variant="outline" size="sm">
                             Edit
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     ))}
                   </CardContent>
