@@ -19,18 +19,18 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
-import {format} from "date-fns";
+import { format, formatDistanceToNow, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
 
 export default function Dashboard() {
   const user = useUser();
   const [promptCount, setPromptCount] = useState<number>(0);
   const [prompts, setPrompts] = useState<any[]>([]);
   const [promptScores, setPromptScores] = useState<any[]>([]);
-
+  const [promptDetla, setPromptDelta] = useState<number>(0);
 
   useEffect(() => {
     const getPrompts = async () => {
-      const { data: userData, error } = await supabase
+      const { data: userData } = await supabase
         .from('users')
         .select('id')
         .eq('email', user?.email)
@@ -41,8 +41,29 @@ export default function Dashboard() {
         .select('*', { count: 'exact' })
         .eq('created_by', userData?.id);
 
+      const now = new Date();
+      const thisWeek = {
+        start: startOfWeek(now),
+        end: endOfWeek(now),
+      };
+
+      const lastWeek = {
+        start: startOfWeek(subWeeks(now, 1)),
+        end: endOfWeek(subWeeks(now, 1))
+      };
+
+      const promptsThisWeek = data?.filter((p) => {
+        isWithinInterval(new Date(p?.created_at), thisWeek)
+      })
+
+      const promptsLastWeek = data?.filter((p) => {
+        isWithinInterval(new Date(p?.created_at), lastWeek)
+      })
+
+      const delta = (promptsThisWeek?.length || 0) - (promptsLastWeek?.length || 0);
+
       if (data) {
-        setPrompts(data);
+        setPrompts(data || []);
       } else {
         setPrompts([]);
       }
@@ -63,8 +84,7 @@ export default function Dashboard() {
       } else {
         setPromptScores([]);
       }
-      console.log(promptScoreData);
-
+      setPromptDelta(delta);
     };
     getPrompts();
   }, [])
@@ -82,14 +102,13 @@ export default function Dashboard() {
             <Tabs defaultValue="overview" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
                 <TabsTrigger value="recent">Recent Prompts</TabsTrigger>
                 <TabsTrigger value="prompts">My Prompt Scores</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Prompt Quality Score</CardTitle>
                       <Sparkles className="h-4 w-4 text-muted-foreground" />
@@ -98,9 +117,9 @@ export default function Dashboard() {
                       {/* <div className="text-2xl font-bold">78/100</div>
                       <p className="text-xs text-muted-foreground">+12% from last week</p>
                       <Progress value={78} className="mt-3" /> */}
-                      <p className="text-md text-muted-foreground">Coming Soon..</p>
-                    </CardContent>
-                  </Card>
+                  {/* <p className="text-md text-muted-foreground">Coming Soon..</p> */}
+                  {/* </CardContent> */}
+                  {/* </Card> */}
 
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -109,11 +128,13 @@ export default function Dashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">{promptCount}</div>
-                      {/* <p className="text-xs text-muted-foreground">+4 new this week</p> */}
+                      <p className="text-xs text-muted-foreground">
+                        {promptDetla > 0 ? `+${promptDetla} more than last week` : promptDetla < 0 ? `${promptDetla} fewer than last week` : `Same as last week`}
+                      </p>
                     </CardContent>
                   </Card>
 
-                  <Card>
+                  {/* <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">Some Data</CardTitle>
                       <Clock className="h-4 w-4 text-muted-foreground" />
@@ -122,23 +143,47 @@ export default function Dashboard() {
                       <div className="text-2xl font-bold">3.5 hours</div>
                       <p className="text-xs text-muted-foreground">This month</p>
                     </CardContent>
-                  </Card>
+                  </Card> */}
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                  <Card className="lg:col-span-4">
+                  <Card>
                     <CardHeader>
-                      <CardTitle>Prompt Enhancement Progress</CardTitle>
-                      <CardDescription>Your journey to mastering prompt engineering</CardDescription>
+                      <CardTitle>Prompt Analytics</CardTitle>
+                      <CardDescription>Detailed metrics about your prompt performance</CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2">
-                      <div className="h-[200px] w-full bg-muted/20 rounded-md flex items-center justify-center">
-                        <BarChart3 className="h-16 w-16 text-muted" />
-                      </div>
+                    <CardContent className="h-[400px] flex items-center justify-center mb-4">
+                      {promptScores?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={promptScores.map((score) => ({
+                              ...score,
+                              created_at: format(new Date(score?.created_at), "MMM d"),
+                            }))}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray={"3 3"} />
+                            <XAxis dataKey={"created_at"} />
+                            <YAxis domain={[0, 10]} />
+                            <Tooltip />
+                            <Legend />
+                            <Line type={"natural"} dataKey={"clarity"} stroke="#f97316" />
+                            <Line type={"natural"} dataKey={"conciseness"} stroke="#3b82f6" />
+                            <Line type={"natural"} dataKey={"relevance"} stroke="#22c55e" />
+                            <Line type={"natural"} dataKey={"specificity"} stroke="#facc15" />
+                            <Line type={"natural"} dataKey={"structure"} stroke="#f87171" />
+                            <Line type={"natural"} dataKey={"model_fit"} stroke="6b7280" />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                          No prompt score data yet
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
-                  <Card className="lg:col-span-3">
+                  {/* <Card className="lg:col-span-3">
                     <CardHeader>
                       <CardTitle>Recommended Templates</CardTitle>
                       <CardDescription>Pre-built templates to enhance your workflow</CardDescription>
@@ -165,46 +210,8 @@ export default function Dashboard() {
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
-                  </Card>
+                  </Card> */}
                 </div>
-              </TabsContent>
-
-              <TabsContent value="analytics" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Prompt Analytics</CardTitle>
-                    <CardDescription>Detailed metrics about your prompt performance</CardDescription>
-                  </CardHeader>
-                  <CardContent className="h-[400px] flex items-center justify-center mb-4">
-                    {promptScores?.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                          data={promptScores.map((score) => ({
-                            ...score,
-                            created_at: format(new Date(score.created_at), "MMM d"),
-                          }))}
-                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray={"3 3"} />
-                          <XAxis dataKey={"created_at"} />
-                          <YAxis domain={[0, 10]} />
-                          <Tooltip />
-                          <Legend />
-                          <Line type={"natural"} dataKey={"clarity"} stroke="#f97316" />
-                          <Line type={"natural"} dataKey={"conciseness"} stroke="#3b82f6" />
-                          <Line type={"natural"} dataKey={"relevance"} stroke="#22c55e" />
-                          <Line type={"natural"} dataKey={"specificity"} stroke="#facc15" />
-                          <Line type={"natural"} dataKey={"structure"} stroke="#f87171" />
-                          <Line type={"natural"} dataKey={"model_fit"} stroke="6b7280" />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-muted-foreground">
-                        No prompt score data yet
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
               </TabsContent>
 
               <TabsContent value="recent" className="space-y-4">
@@ -218,7 +225,7 @@ export default function Dashboard() {
                       <div key={prompt?.id} className="flex flex-col space-y-2 rounded-md border p-4">
                         <div className="flex items-center justify-between">
                           <h3 className="font-medium">Prompt #{prompt?.id}</h3>
-                          <p className="text-xs text-muted-foreground">2 days ago</p>
+                          <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(prompt?.created_at), { addSuffix: true })}</p>
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {prompt?.prompt_value}

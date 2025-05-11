@@ -64,56 +64,6 @@ export default function PromptLibrary() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
-
-    // useEffect(() => {
-    //     const fetchPrompts = async () => {
-    //         try {
-    //             const response = await fetch("/api/prompt-library", {
-    //                 method: "GET",
-    //                 headers: {
-    //                     "Content-Type": "application/json",
-    //                 },
-    //             });
-
-    //             const data = await response.json();
-
-    //             // Transform backend prompt shape to match frontend expectations
-    //             const formatted = data?.map((prompt: any, index: number) => ({
-    //                 id: prompt?.id || index + 1,
-    //                 createdBy: prompt?.created_by,
-    //                 title: prompt?.prompt_title,
-    //                 description: prompt?.prompt_description,
-    //                 promptText: prompt?.promptText,
-    //                 niche: prompt?.niche,
-    //                 likes: prompt?.likes || 0,
-    //                 dislikes: prompt?.dislikes || 0,
-    //             }));
-
-    //             setPrompts(formatted);
-    //             setFilteredPrompts(formatted);
-    //             setLoading(false);
-
-    //             console.log(data);
-
-    //         } catch (error) {
-    //             console.error("Failed to fetch prompts", error);
-    //             toast.error("Failed to load prompts. Try again later.");
-    //         }
-    //     };
-
-    //     const getUserNameFromId = async () => {
-    //         try {
-    //             const name = await data.
-    //         } catch (error) {
-
-    //         }
-    //     }
-
-    //     fetchPrompts();
-    // }, []);
-
-    // Form state for creating a new prompt
-
     useEffect(() => {
         const fetchPromptsWithUsernames = async () => {
             try {
