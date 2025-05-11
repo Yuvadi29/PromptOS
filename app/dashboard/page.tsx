@@ -146,7 +146,7 @@ export default function Dashboard() {
                   </Card> */}
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+                <div>
                   <Card>
                     <CardHeader>
                       <CardTitle>Prompt Analytics</CardTitle>

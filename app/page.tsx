@@ -16,6 +16,7 @@ import {
   Braces,
   // Database,
   Cpu,
+  Database,
 } from "lucide-react"
 import Link from "next/link"
 import FeatureCard from "@/components/feature-card"
@@ -94,7 +95,7 @@ export default function Home() {
       </section>
 
       {/* Code Example Section */}
-      <section className="w-full py-12 md:py-24 bg-white">
+      {/* <section className="w-full py-12 md:py-24 bg-white">
         <div className="container px-4 md:px-6 mx-auto">
           <ScrollAnimation>
             <div className="flex flex-col md:flex-row gap-8 items-center">
@@ -152,10 +153,10 @@ async function enhancePrompt() {
             </div>
           </ScrollAnimation>
         </div>
-      </section>
+      </section> */}
 
       {/* Terminal Example Section */}
-      <section className="w-full py-12 md:py-24 bg-gray-50">
+      {/* <section className="w-full py-12 md:py-24 bg-gray-50">
         <div className="container px-4 md:px-6 mx-auto">
           <ScrollAnimation>
             <div className="flex flex-col md:flex-row-reverse gap-8 items-center">
@@ -204,16 +205,16 @@ async function enhancePrompt() {
             </div>
           </ScrollAnimation>
         </div>
-      </section>
+      </section> */}
 
       {/* Phase 1 Features */}
       <section className="w-full py-12 md:py-24 bg-white">
         <div className="container px-4 md:px-6 mx-auto">
           <ScrollAnimation>
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              {/* <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 text-white text-sm font-medium">
+              <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 text-white text-sm font-medium">
                 Phase 1 - MVP
-              </div> */}
+              </div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Core <GradientText>Features</GradientText>
               </h2>
@@ -255,7 +256,7 @@ async function enhancePrompt() {
               <FeatureCard
                 icon={<Code className="h-10 w-10" />}
                 title="User Profile + Memory"
-                description="Personalized prompt tuning based on usage & feedback"
+                description="Personalized prompt tuning based on usage & feedback (Coming Soon...)"
                 accentColor="blue"
               />
             </div>
@@ -269,9 +270,9 @@ async function enhancePrompt() {
         <div className="container px-4 md:px-6 mx-auto">
           <ScrollAnimation>
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              {/* <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 to-green-400 text-white text-sm font-medium">
+              <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 to-green-400 text-white text-sm font-medium">
                 Phase 2 - Power Features
-              </div> */}
+              </div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Advanced <GradientText colors="from-blue-500 via-green-400 to-orange-500">Capabilities</GradientText>
               </h2>
@@ -322,13 +323,13 @@ async function enhancePrompt() {
       </section>
 
       {/* Use Cases */}
-      <section className="w-full py-12 md:py-24 bg-white">
+      {/* <section className="w-full py-12 md:py-24 bg-white">
         <div className="container px-4 md:px-6 mx-auto">
           <ScrollAnimation>
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
-              {/* <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 text-white text-sm font-medium">
+              <div className="inline-block px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 to-blue-500 text-white text-sm font-medium">
                 Target Use Cases
-              </div> */}
+              </div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Optimize Prompts <GradientText>Across Domains</GradientText>
               </h2>
@@ -365,10 +366,10 @@ async function enhancePrompt() {
             </div>
           </ScrollAnimation>
         </div>
-      </section>
+      </section> */}
 
       {/* System Architecture */}
-      {/* <section className="w-full py-12 md:py-24 bg-black text-white relative">
+      <section className="w-full py-12 md:py-24 bg-black text-white relative">
         <div className="absolute inset-0 bg-grid-pattern opacity-5 bg-[size:30px_30px]"></div>
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 via-blue-500 to-purple-600"></div>
         <div className="container px-4 md:px-6 mx-auto relative z-10">
@@ -448,7 +449,7 @@ async function enhancePrompt() {
             </div>
           </ScrollAnimation>
         </div>
-      </section> */}
+      </section>
 
       {/* Metrics */}
       <section className="w-full py-12 md:py-24 bg-white">
@@ -476,16 +477,16 @@ async function enhancePrompt() {
                 description="Measure user satisfaction per enhancement"
                 icon={<Users className="h-6 w-6 text-blue-500" />}
               />
-              <MetricCard
+              {/* <MetricCard
                 title="Prompt Reuse Frequency"
                 description="Indicates perceived value"
                 icon={<GitBranch className="h-6 w-6 text-green-500" />}
-              />
-              <MetricCard
+              /> */}
+              {/* <MetricCard
                 title="Time-to-Insight"
                 description="Time saved compared to manual prompt crafting"
                 icon={<Zap className="h-6 w-6 text-orange-500" />}
-              />
+              /> */}
               <MetricCard
                 title="Output Quality Score"
                 description="(Optional, rated by model or human)"
