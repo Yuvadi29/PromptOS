@@ -1,6 +1,6 @@
 <!-- Project Banner -->
 <p align="center">
-  <img src="https://your-image-host.com/promptos-banner.png" alt="PromptOS Banner" width="100%" />
+  <img src="https://github.com/user-attachments/assets/43200edf-3801-45e3-9c62-e7e3e9b19241" alt="PromptOS Banner" width="100%" />
 </p>
 
 <h1 align="center">🚀 PromptOS</h1>
