@@ -9,17 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  CartesianGrid,
-} from "recharts";
-import { format, formatDistanceToNow, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
+import { formatDistanceToNow, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
 
 export default function Dashboard() {
   const user = useUser();
@@ -147,7 +137,7 @@ export default function Dashboard() {
                 </div>
 
                 <div>
-                  <Card>
+                  {/* <Card>
                     <CardHeader>
                       <CardTitle>Prompt Analytics</CardTitle>
                       <CardDescription>Detailed metrics about your prompt performance</CardDescription>
@@ -181,7 +171,7 @@ export default function Dashboard() {
                         </div>
                       )}
                     </CardContent>
-                  </Card>
+                  </Card> */}
 
                   {/* <Card className="lg:col-span-3">
                     <CardHeader>
