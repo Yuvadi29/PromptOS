@@ -26,14 +26,14 @@ import { toast } from "sonner"
 import { useSearchParams } from "next/navigation"
 
 export default function Home() {
-  const searchParams = useSearchParams();
-  const error = searchParams.get('error');
+  // const searchParams = useSearchParams();
+  // const error = searchParams.get('error');
 
-  useEffect(() => {
-    if (error === 'unauthorized') {
-      toast.info('Please sign in first!!');
-    }
-  }, [error]);
+  // useEffect(() => {
+  //   if (error === 'unauthorized') {
+  //     toast.info('Please sign in first!!');
+  //   }
+  // }, [error]);
 
 
   return (

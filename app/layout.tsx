@@ -2,6 +2,7 @@ import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from 'sonner';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Suspense } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
