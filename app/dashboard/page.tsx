@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ArrowRight, BookMarked } from "lucide-react"
