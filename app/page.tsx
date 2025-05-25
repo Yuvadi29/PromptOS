@@ -7,24 +7,17 @@ import {
   Code,
   FileText,
   MessageSquare,
-  ImageIcon,
-  BookOpen,
   Users,
   GitBranch,
   BarChart3,
-  Terminal,
   Braces,
-  // Database,
   Cpu,
   Database,
 } from "lucide-react"
 import Link from "next/link"
 import FeatureCard from "@/components/feature-card"
-import UseCaseCard from "@/components/use-case-card"
 import MetricCard from "@/components/metric-card"
 import HeroAnimation from "@/components/hero-animation"
-import CodeWindow from "@/components/code-window"
-import TerminalWindow from "@/components/terminal-window"
 import ScrollAnimation from "@/components/scroll-animation"
 import GradientText from "@/components/gradient-text"
 import { AuthButton } from "@/components/AuthButton"

@@ -1,6 +1,6 @@
 'use client';
 
-import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarTrigger } from './ui/sidebar';
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
 import { CircleGaugeIcon, GitCompareIcon, HomeIcon, LibraryIcon, LogOutIcon, Settings2Icon } from 'lucide-react';
 import Link from 'next/link';
 import ProfileModal from './ProfileModal';

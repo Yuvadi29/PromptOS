@@ -26,13 +26,13 @@ export async function POST(req: Request) {
             status: 200
         })
     } catch (error) {
-        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ message: error}, { status: 500 });
 
     }
 };
 
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
         // Get data from DB
         const { data, error } = await supabase.from("prompt_library").select("*");
@@ -43,8 +43,8 @@ export async function GET(req: Request) {
         }
 
         return NextResponse.json(data, { status: 200 });
-    } catch (error: any) {
-        console.error("Unexpected error:", error.message);
+    } catch {
+        // console.error("Unexpected error:", error.message);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

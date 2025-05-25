@@ -18,7 +18,7 @@ const handler = NextAuth({
         async signIn({ user }) {
 
             // Save user info to supabase manually
-            const { data, error } = await supabase.from("users").upsert({
+            const { error } = await supabase.from("users").upsert({
                 id: user?.id,
                 name: user?.name,
                 email: user?.email,

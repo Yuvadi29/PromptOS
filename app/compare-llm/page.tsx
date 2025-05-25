@@ -44,7 +44,7 @@ export default function LLMComparison() {
       const decoder = new TextDecoder("utf-8");
   
       let currentText = '';
-      let modelChunks = {
+      const modelChunks = {
         model1: '',
         model2: '',
         model3: '',
@@ -57,7 +57,7 @@ export default function LLMComparison() {
         if (done) break;
   
         const chunk = decoder.decode(value, { stream: true });
-        currentText += chunk;
+        // currentText += chunk;
   
         // Detect model headers
         if (chunk.includes("--- Model 1")) currentModel = "model1";

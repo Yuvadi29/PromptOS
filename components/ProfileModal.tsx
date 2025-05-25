@@ -33,7 +33,7 @@ export default function ProfileModal({ user }: ProfileModalProps) {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">
-              {user?.name?.split(" ")[0]}'s Dashboard
+              {user?.name?.split(" ")[0]}&apos;s Dashboard
             </DialogTitle>
           </DialogHeader>
 

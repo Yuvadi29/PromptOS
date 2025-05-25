@@ -95,7 +95,7 @@ export default function HeroAnimation() {
           const distance = Math.sqrt(dx * dx + dy * dy)
 
           if (distance < 100) {
-            const opacity = 1 - distance / 100
+            // const opacity = 1 - distance / 100
             const gradient = ctx.createLinearGradient(particles[i].x, particles[i].y, particles[j].x, particles[j].y)
 
             gradient.addColorStop(0, particles[i].color)

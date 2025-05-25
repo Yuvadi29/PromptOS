@@ -78,7 +78,7 @@ export default function PromptLibrary() {
                 const data = await response.json();
 
                 // 2. Extract user IDs
-                const userIds = [...new Set(data.map((prompt: any) => prompt.created_by))];
+                const userIds = [...new Set(data?.map((prompt: any) => prompt?.created_by))];
 
                 // 3. Fetch user info in batch
                 const { data: usersData, error: usersError } = await supabase
@@ -258,7 +258,7 @@ export default function PromptLibrary() {
                                     <DialogHeader>
                                         <DialogTitle>Create a new prompt</DialogTitle>
                                         <DialogDescription>
-                                            Fill in the details below to create a new prompt. Click save when you're done.
+                                            Fill in the details below to create a new prompt. Click save when you&apos;re done.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="grid gap-4 py-4">

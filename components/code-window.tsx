@@ -26,7 +26,7 @@ export default function CodeWindow({ title, code }: CodeWindowProps) {
 
   // Highlight syntax for the displayed code (progressively)
   const getHighlightedCode = (code: string) => {
-    let highlighted = code
+    const highlighted = code
       .replace(/(['"`])(?:\\.|[^\\])*?\1/g, '<span class="token-string">$&</span>')
       .replace(/(\/\/.*)/g, '<span class="token-comment">$1</span>')
       .replace(/\b(import|from|const|let|var|function|async|await|return|if|else|for|while)\b/g, '<span class="token-keyword">$1</span>')

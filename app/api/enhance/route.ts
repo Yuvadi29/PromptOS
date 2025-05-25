@@ -53,7 +53,6 @@ User Input Prompt: """${prompt}"""
   const result = await model.generateContentStream([systemPrompt]);
   const stream = new ReadableStream({
     async start(controller) {
-      const decoder = new TextDecoder();
       const encoder = new TextEncoder();
 
       for await (const chunk of result.stream) {

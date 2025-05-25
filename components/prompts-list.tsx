@@ -39,7 +39,7 @@ export function PromptsList() {
     <Card className="h-full">
       <CardHeader>
         <CardTitle>Your Prompts</CardTitle>
-        <CardDescription>Recent prompts you've created</CardDescription>
+        <CardDescription>Recent prompts you&apos;ve created</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[300px] pr-4">

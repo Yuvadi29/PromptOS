@@ -12,21 +12,21 @@ export async function POST(req: Request) {
     const field = type === "likes" ? "likes" : "dislikes";
 
     if (type === "likes") {
-      let { data, error } = await supabase
+      const { error } = await supabase
         .rpc('increment_likes', {
           promptid: promptId
         })
       if (error) console.error(error)
     } else {
 
-      let { data, error } = await supabase
+      const { error } = await supabase
         .rpc('increment_dislikes', {
           promptid: promptId
         })
       if (error) console.error(error)
     }
 
-    console.log(`[RPC SUCCESS]: ${field} incremented for prompt_id ${promptId}`);
+    // console.log(`[RPC SUCCESS]: ${field} incremented for prompt_id ${promptId}`);
 
     return NextResponse.json({ message: `${type} registered` }, { status: 200 });
   } catch (error) {

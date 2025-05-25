@@ -1,7 +1,7 @@
 'use client';
 
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { ArrowRight, BarChart3, BookMarked, Clock, Lightbulb, Sparkles, Star } from "lucide-react"
+import { ArrowRight, BookMarked } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -87,7 +87,7 @@ export default function Dashboard() {
       setPromptDelta(delta);
     };
     getPrompts();
-  }, [])
+  }, [user?.email])
 
   return (
     <SidebarProvider>

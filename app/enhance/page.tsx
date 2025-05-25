@@ -107,7 +107,7 @@ export default function PromptEnhancer() {
         clearTimeout(feedbackTimer);
       }
     }
-  }, [response, session, supabase]);
+  }, [response, session]);
 
   const handleCopy = () => {
     if (response) {
