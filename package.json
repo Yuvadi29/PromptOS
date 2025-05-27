@@ -26,6 +26,7 @@
     "@shadcn/ui": "^0.0.4",
     "@supabase/supabase-js": "^2.49.4",
     "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
     "ai": "^4.3.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
