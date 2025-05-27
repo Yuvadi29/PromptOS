@@ -8,6 +8,11 @@ import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
 import supabase from '@/lib/supabase'
 import ReactMarkdown from 'react-markdown';
+import { Button } from '@/components/ui/button'
+import { SiOpenai } from "react-icons/si";
+import { RiGeminiFill } from "react-icons/ri";
+
+
 
 export default function PromptEnhancer() {
   const [input1, setInput1] = useState('')
@@ -209,20 +214,58 @@ export default function PromptEnhancer() {
 
             {/* Output */}
             {response.slice(7) && (
-              <div className="relative">
-                <div
-                  ref={input2Ref as unknown as React.RefObject<HTMLDivElement>}
-                  className="w-full max-w-full bg-gray-100 text-gray-800 p-4 rounded-xl border border-gray-300 focus:outline-none resize-none min-h-[6rem]"
-                  style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
-                >
-                  <ReactMarkdown>{response}</ReactMarkdown>
-                </div>
-                <Copy
-                  onClick={handleCopy}
-                  className="absolute top-3 right-3 cursor-pointer text-gray-400 hover:text-black transition"
-                />
+            <div className="relative">
+              <div
+                ref={input2Ref as unknown as React.RefObject<HTMLDivElement>}
+                className="w-full max-w-full bg-gray-100 text-gray-800 p-4 rounded-xl border border-gray-300 focus:outline-none resize-none min-h-[6rem]"
+                style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+              >
+                <ReactMarkdown>{response}</ReactMarkdown>
               </div>
+              <Copy
+                onClick={handleCopy}
+                className="absolute top-3 right-3 cursor-pointer text-gray-400 hover:text-black transition"
+              />
+
+              <div className="flex justify-center items-center gap-4 mt-5">
+                <svg width="0" height="0">
+                  <linearGradient id="gemini-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop stopColor="#AF78B2" offset="0%" />
+                    <stop stopColor="#D96E6A" offset="100%" />
+                  </linearGradient>
+                </svg>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleCopy();
+                    toast.success("Prompt copied! Paste it in ChatGPT.");
+                    window.open("https://chat.openai.com/chat", "_blank");
+                  }}
+                  className='cursor-pointer'
+                >
+                  Open in ChatGPT <SiOpenai fill='#0BA37F' />
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    handleCopy();
+                    toast.success("Prompt copied! Paste it in ChatGPT.");
+                    window.open("https://gemini.google.com/app", "_blank");
+                  }}
+                  className='cursor-pointer'
+                >
+                  Open in Gemini <RiGeminiFill style={{ fill: "url(#gemini-gradient)" }} size={18} />
+
+                </Button>
+              </div>
+
+            </div>
             )}
+
 
             {/* Feedback */}
             <AnimatePresence>

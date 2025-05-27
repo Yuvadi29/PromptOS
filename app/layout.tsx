@@ -2,6 +2,7 @@ import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from 'sonner';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Analytics } from "@vercel/analytics/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Toaster position="top-right" richColors />
           {children}
+          <Analytics />
         </Providers>
       </body>
     </html>
