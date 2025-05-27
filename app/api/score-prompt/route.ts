@@ -49,8 +49,6 @@ You must also include one brief and actionable suggestion for improvement (if an
 
     const text = result.response.text();
 
-    console.log("Gemini raw output:", text); // For debugging
-
     const match = text.match(/\{[\s\S]*?\}/);
     if (!match) throw new Error("No valid JSON in Gemini response");
 

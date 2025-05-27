@@ -7,6 +7,7 @@ import { Copy, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
 import supabase from '@/lib/supabase'
+import ReactMarkdown from 'react-markdown';
 
 export default function PromptEnhancer() {
   const [input1, setInput1] = useState('')
@@ -15,6 +16,8 @@ export default function PromptEnhancer() {
   const input2Ref = useRef<HTMLTextAreaElement>(null)
   const { data: session } = useSession();
   const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackState, setFeedbackState] = useState<null | 'like' | 'dislike'>(null);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,7 +60,7 @@ export default function PromptEnhancer() {
       const timer = setTimeout(async () => {
         try {
           if (!session?.user?.email) {
-            console.log('User not authenticated');
+            toast.info('User not authenticated');
             return;
           }
 
@@ -72,8 +75,6 @@ export default function PromptEnhancer() {
             console.error('Failed to fetch user ID from Supabase: ', error);
             return;
           }
-
-          console.log('UserID: ', userData.id);
 
           const res = await fetch('/api/save-prompt', {
             method: 'POST',
@@ -118,9 +119,10 @@ export default function PromptEnhancer() {
 
   const handlePositiveFeedback = async () => {
     try {
-      const storeFeedback = await fetch('/api/positive-feedback', {
+      setFeedbackState('like');
+      const storeFeedback = await fetch('/api/feedback', {
         method: 'POST',
-        body: JSON.stringify({ response }), // no need to `${response}` because it's already a string
+        body: JSON.stringify({ response, feedback: true }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -129,7 +131,7 @@ export default function PromptEnhancer() {
       if (storeFeedback.ok) {
         toast.success('Thank you for your feedback!');
       } else {
-        toast.error('Failed to store feedback.');
+        toast.error('Feedback can only be given once per prompt.');
       }
     } catch (error) {
       console.error('Error Storing Feedback: ', error);
@@ -139,9 +141,11 @@ export default function PromptEnhancer() {
 
   const handleNegativeFeedback = async () => {
     try {
-      const storeFeedback = await fetch('/api/negative-feedback', {
+      setFeedbackState('dislike');
+
+      const storeFeedback = await fetch('/api/feedback', {
         method: 'POST',
-        body: JSON.stringify({ response }), // no need to `${response}` because it's already a string
+        body: JSON.stringify({ response, feedback: false }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -150,7 +154,7 @@ export default function PromptEnhancer() {
       if (storeFeedback.ok) {
         toast.success('Thank you for your feedback!');
       } else {
-        toast.error('Failed to store feedback.');
+        toast.error('Feedback can only be given once per prompt.');
       }
     } catch (error) {
       console.error('Error Storing Feedback: ', error);
@@ -160,99 +164,112 @@ export default function PromptEnhancer() {
 
   if (isLoading) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-white">
-            <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="w-16 h-16 border-4 border-gray-200 border-t-black rounded-full animate-spin" />
+      </div>
 
     );
-}
+  }
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full items-center justify-center bg-white p-6">
-        <div className="w-full max-w-4xl rounded-3xl bg-white shadow-xl p-8 space-y-8 text-gray-800 border-2 border-gray-200">
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-extrabold tracking-tight">✨ Prompt Enhancer</h1>
-            <p className="text-gray-500 text-sm">Enter your raw prompt and get a refined, model-ready version instantly.</p>
-          </div>
-
-          {/* Prompt Form */}
-          <motion.form
-            onSubmit={handleSubmit}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-6"
-          >
-            <textarea
-              className="w-full bg-gray-100 border border-gray-300 rounded-xl p-4 text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
-              rows={4}
-              placeholder="Write your prompt here..."
-              value={input1}
-              onChange={(e) => setInput1(e.target.value)}
-            />
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gray-800 hover:bg-gray-900 text-white transition rounded-xl py-3 font-semibold tracking-wide cursor-pointer"
-            >
-              {isLoading ? 'Enhancing...' : 'Enhance Prompt'}
-            </button>
-          </motion.form>
-
-          {/* Output */}
-          {response.slice(7) && (
-            <div className="relative">
-              <motion.textarea
-                ref={input2Ref}
-                value={response}
-                disabled
-                className="w-full max-w-full bg-gray-100 text-gray-800 p-4 rounded-xl border border-gray-300 focus:outline-none resize-none"
-                rows={6}
-              />
-              <Copy
-                onClick={handleCopy}
-                className="absolute top-3 right-3 cursor-pointer text-gray-400 hover:text-black transition"
-              />
+      <>
+        <div className="flex min-h-screen w-full items-center justify-center bg-white p-6">
+          <div className="w-full max-w-4xl rounded-3xl bg-white shadow-xl p-8 space-y-8 text-gray-800 border-2 border-gray-200">
+            {/* Header */}
+            <div className="text-center space-y-2">
+              <h1 className="text-4xl font-extrabold tracking-tight">✨ Prompt Enhancer</h1>
+              <p className="text-gray-500 text-sm">Enter your raw prompt and get a refined, model-ready version instantly.</p>
             </div>
-          )}
 
-          {/* Feedback */}
-          <AnimatePresence>
-            {showFeedback && (
-              <motion.div
-                key="feedback"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4 }}
-                className="flex flex-col items-center space-y-3 bg-gray-100 p-4 rounded-xl border border-gray-200"
+            {/* Prompt Form */}
+            <motion.form
+              onSubmit={handleSubmit}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-6"
+            >
+              <textarea
+                className="w-full bg-gray-100 border border-gray-300 rounded-xl p-4 text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:outline-none resize-none"
+                rows={4}
+                placeholder="Write your prompt here..."
+                value={input1}
+                onChange={(e) => setInput1(e.target.value)}
+              />
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-gray-800 hover:bg-gray-900 text-white transition rounded-xl py-3 font-semibold tracking-wide cursor-pointer"
               >
-                <p className="text-sm text-gray-700">Was this enhancement useful?</p>
-                <div className="flex gap-6">
-                  <ThumbsUpIcon size={30} className="text-green-400 hover:scale-110 transition cursor-pointer" onClick={handlePositiveFeedback} />
-                  <ThumbsDownIcon size={30} className="text-red-400 hover:scale-110 transition cursor-pointer" onClick={handleNegativeFeedback} />
+                {isLoading ? 'Enhancing...' : 'Enhance Prompt'}
+              </button>
+            </motion.form>
+
+            {/* Output */}
+            {response.slice(7) && (
+              <div className="relative">
+                <div
+                  ref={input2Ref as unknown as React.RefObject<HTMLDivElement>}
+                  className="w-full max-w-full bg-gray-100 text-gray-800 p-4 rounded-xl border border-gray-300 focus:outline-none resize-none min-h-[6rem]"
+                  style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+                >
+                  <ReactMarkdown>{response}</ReactMarkdown>
                 </div>
+                <Copy
+                  onClick={handleCopy}
+                  className="absolute top-3 right-3 cursor-pointer text-gray-400 hover:text-black transition"
+                />
+              </div>
+            )}
+
+            {/* Feedback */}
+            <AnimatePresence>
+              {showFeedback && (
+                <motion.div
+                  key="feedback"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex flex-col items-center space-y-3 bg-gray-100 p-4 rounded-xl border border-gray-200"
+                >
+                  <p className="text-sm text-gray-700">Was this enhancement useful?</p>
+                  <div className="flex gap-6">
+                    <ThumbsUpIcon
+                      size={30}
+                      className={`${feedbackState === 'like' ? "text-green-600" : "text-green-400"} hover:scale-110 transition cursor-pointer`}
+                      onClick={handlePositiveFeedback}
+                      fill={feedbackState === 'like' ? 'currentColor' : 'none'}
+                    />
+                    <ThumbsDownIcon
+                      size={30}
+                      className={`${feedbackState === 'dislike' ? "text-red-600" : "text-red-400"} hover:scale-110 transition cursor-pointer`}
+                      onClick={handleNegativeFeedback}
+                      fill={feedbackState === 'dislike' ? 'currentColor' : 'none'}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Loader */}
+            {isLoading && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="text-sm text-gray-500 text-center"
+              >
+                Enhancing your prompt<span className="animate-pulse">...</span>
               </motion.div>
             )}
-          </AnimatePresence>
-
-          {/* Loader */}
-          {isLoading && (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-sm text-gray-500 text-center"
-            >
-              Enhancing your prompt<span className="animate-pulse">...</span>
-            </motion.div>
-          )}
+          </div>
         </div>
-      </div>
+      </>
+
     </SidebarProvider>
 
   )

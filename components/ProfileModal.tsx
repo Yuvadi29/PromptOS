@@ -26,7 +26,13 @@ export default function ProfileModal({ user }: ProfileModalProps) {
             <Avatar className="w-10 h-10">
               <Image src={user?.image || "/avatar.png"} alt={user?.name || "User avatar"} width={40} height={40}/>
             </Avatar>
-            <span className="text-black font-medium">{user?.name}</span>
+            <span
+              className="text-black font-medium truncate max-w-[120px] block"
+              title={user?.name}
+            >
+              {user?.name || "User"}
+            </span>
+
           </Button>
         </DialogTrigger>
 

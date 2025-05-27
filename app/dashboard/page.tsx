@@ -11,6 +11,7 @@ import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase";
 import { formatDistanceToNow, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
+import { toast } from "sonner";
 
 export default function Dashboard() {
   const user = useUser();
@@ -60,7 +61,7 @@ export default function Dashboard() {
       }
 
       if (promptError) {
-        console.log('Error Fetching Prompts: ', promptError);
+        toast.error('Error Fetching Prompts: ');
       } else {
         setPromptCount(count || 0);
       }
@@ -212,10 +213,10 @@ export default function Dashboard() {
                     <CardDescription>Your recently created and enhanced prompts</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {prompts?.map((prompt) => (
+                    {prompts?.map((prompt, index) => (
                       <div key={prompt?.id} className="flex flex-col space-y-2 rounded-md border p-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Prompt #{prompt?.id}</h3>
+                          <h3 className="font-medium">Prompt #{index + 1}</h3>
                           <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(prompt?.created_at), { addSuffix: true })}</p>
                         </div>
                         <p className="text-sm text-muted-foreground">

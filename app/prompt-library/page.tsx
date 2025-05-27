@@ -441,27 +441,6 @@ export default function PromptLibrary() {
                         </Card>
                     ))}
                 </div>
-
-                {filteredPrompts?.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="rounded-full bg-gray-100 dark:bg-gray-800 p-3">
-                            <Filter className="h-6 w-6 text-gray-400" />
-                        </div>
-                        <h3 className="mt-4 text-lg font-medium">No prompts found</h3>
-                        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                            Try changing your filters or create a new prompt.
-                        </p>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <Button className="mt-4 gap-2">
-                                    <Plus className="h-4 w-4" />
-                                    Create Prompt
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[525px]">{/* Same dialog content as above */}</DialogContent>
-                        </Dialog>
-                    </div>
-                )}
             </main>
         </div>
     )

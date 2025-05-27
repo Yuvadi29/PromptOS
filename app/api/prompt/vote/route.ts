@@ -26,8 +26,6 @@ export async function POST(req: Request) {
       if (error) console.error(error)
     }
 
-    // console.log(`[RPC SUCCESS]: ${field} incremented for prompt_id ${promptId}`);
-
     return NextResponse.json({ message: `${type} registered` }, { status: 200 });
   } catch (error) {
     console.error("[SERVER ERROR]:", error);

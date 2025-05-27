@@ -51,13 +51,21 @@ User Input Prompt: """${prompt}"""
 
   // Start streaming response
   const result = await model.generateContentStream([systemPrompt]);
+
+  let fullText = '';
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
 
       for await (const chunk of result.stream) {
         const chunkText = chunk.text();
-        controller.enqueue(encoder.encode(chunkText));
+
+        // Remove ```text``
+        const cleanText = chunkText
+        .replace(/```text\n?/g, '')
+        .replace(/```/g, '');
+        fullText += cleanText;
+        controller.enqueue(encoder.encode(cleanText));
       }
 
       controller.close();
