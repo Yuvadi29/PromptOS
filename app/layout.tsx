@@ -24,11 +24,11 @@ export const metadata = {
   openGraph: {
     title: "PromptOS – Your AI Prompt Companion",
     description: "Enhance your prompts, compare LLMs, and streamline your AI workflows with PromptOS.",
-    url: "https://prompt-os-five.vercel.app",
+    url: "https://promptos.in/",
     siteName: "PromptOS",
     images: [
       {
-        url: "https://prompt-os-five.vercel.app/og-image.png",
+        url: "https://promptos.in/og-image.png",
         width: 1200,
         height: 630,
         alt: "PromptOS Preview",
@@ -41,7 +41,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "PromptOS – Your AI Prompt Companion",
     description: "Enhance your prompts, compare LLMs, and streamline your AI workflows with PromptOS.",
-    images: ["https://prompt-os-five.vercel.app/og-image.png"],
+    images: ["https://promptos.in/og-image.png"],
   },
 };
 
@@ -49,7 +49,24 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" prefix="og: https://promptos.in/og-image.png">
+      <head>
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="PromptOS" />
+        <meta name="theme-color" content="#ffffff" />
+        <link rel="canonical" href="https://promptos.in/" />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "PromptOS",
+              "url": "https://promptos.in/",
+              "logo": "https://promptos.in/og-image.png"
+            }
+          `}
+        </script>
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>
           <Toaster position="top-right" richColors />
