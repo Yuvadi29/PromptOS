@@ -1,24 +1,13 @@
 "use server";
 
 import { NextRequest } from "next/server";
-import Groq from "groq-sdk";
-
-const groq = new Groq({
-  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
-});
-
-const MODELS = [
-  { name: "llama-3.3-70b-versatile", label: "Model 1 (LLaMA 3.3 70B)" },
-  { name: "llama3-70b-8192", label: "Model 2 (LLaMA 70B 8192)" },
-  { name: "gemma2-9b-it", label: "Model 3 (Gemma 9B IT)" },
-];
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt } = await req.json();
+    const { prompt, models } = await req.json();
 
-    if (!prompt || typeof prompt !== "string") {
-      return new Response(JSON.stringify({ error: "Invalid prompt" }), {
+    if (!prompt || typeof prompt !== "string" || !Array.isArray(models) || models.length !== 3) {
+      return new Response(JSON.stringify({ error: "Invalid prompt or model selection" }), {
         status: 400,
       });
     }
@@ -39,25 +28,67 @@ Instructions:
       async start(controller) {
         const encoder = new TextEncoder();
 
-        for (const { name, label } of MODELS) {
-          // Write model label
-          controller.enqueue(encoder.encode(`\n\n--- ${label} ---\n\n`));
+        for (let i = 0; i < models.length; i++) {
+          const modelId = models[i];
 
-          const responseStream = await groq.chat.completions.create({
-            model: name,
-            messages: [
-              { role: "system", content: fineTunedPrompt },
-              { role: "user", content: prompt },
-            ],
-            stream: true,
+          controller.enqueue(encoder.encode(`\n\n--- Model ${i + 1} (${modelId}) ---\n\n`));
+
+          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+              "HTTP-Referer": "https://promptos.in",
+              "X-Title": "PromptOS",
+            },
+            body: JSON.stringify({
+              model: modelId,
+              stream: true,
+              messages: [
+                { role: "system", content: fineTunedPrompt },
+                { role: "user", content: prompt },
+              ],
+            }),
           });
 
-          for await (const chunk of responseStream) {
-            const content = chunk.choices?.[0]?.delta?.content;
-            if (content) {
-              controller.enqueue(encoder.encode(content));
+          if (!response.body) {
+            controller.enqueue(encoder.encode(`[Error getting response from ${modelId}]\n\n`));
+            continue;
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+
+          let done = false;
+
+          while (!done) {
+            const { value, done: readerDone } = await reader.read();
+            done = readerDone;
+
+            if (value) {
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split("\n");
+
+              for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                  const jsonStr = line.slice(6).trim();
+
+                  if (jsonStr === "[DONE]") continue;
+
+                  try {
+                    const parsed = JSON.parse(jsonStr);
+                    const content = parsed.choices?.[0]?.delta?.content;
+                    if (content) {
+                      controller.enqueue(encoder.encode(content));
+                    }
+                  } catch (err) {
+                    console.error("Invalid JSON chunk from model", err);
+                  }
+                }
+              }
             }
           }
+
         }
 
         controller.close();
@@ -66,12 +97,13 @@ Instructions:
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache",
+        Connection: "keep-alive",
       },
     });
   } catch (error) {
-    console.error("Error in multi-model stream API:", error);
+    console.error("OpenRouter API error:", error);
     return new Response(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
     });

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
     try {
-        const { userId, prompt} = await req.json();
+        const { userId, prompt, originalPrompt} = await req.json();
 
         if (!userId || !prompt) {
             return NextResponse.json({
@@ -15,6 +15,7 @@ export async function POST(req: Request) {
         await supabase.from("prompts").insert({
             created_by: userId,
             prompt_value: prompt,
+            original_prompt:originalPrompt
         });
 
         return NextResponse.json({

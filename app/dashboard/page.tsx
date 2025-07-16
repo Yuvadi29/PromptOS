@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase";
 import { formatDistanceToNow, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function Dashboard() {
   const user = useUser();
@@ -80,6 +81,20 @@ export default function Dashboard() {
     };
     getPrompts();
   }, [user?.email])
+
+  const sortedPrompts = prompts ? [...prompts].sort((a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime()) : [];
+
+  function getColor(score: number) {
+    if (score >= 8) return 'text-green-600';
+    if (score >= 5) return 'text-yellow-600';
+    return 'text-red-600';
+  }
+
+  function getBarColor(score: number) {
+    if (score >= 8) return 'bg-green-500';
+    if (score >= 5) return 'bg-yellow-500';
+    return 'bg-red-500';
+  }
 
   return (
     <SidebarProvider>
@@ -213,59 +228,77 @@ export default function Dashboard() {
                     <CardDescription>Your recently created and enhanced prompts</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {prompts?.map((prompt, index) => (
+                    {sortedPrompts?.slice(0, 5).map((prompt, index) => (
                       <div key={prompt?.id} className="flex flex-col space-y-2 rounded-md border p-4">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Prompt #{index + 1}</h3>
+                          <h3 className="font-medium">Prompt #{sortedPrompts.length - index}</h3>
                           <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(prompt?.created_at), { addSuffix: true })}</p>
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {prompt?.prompt_value}
                         </p>
                         <div className="flex items-center space-x-2 pt-2">
-                          <Button variant="outline" size="sm">
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
+                          <Link href={`/dashboard/prompt/${prompt?.id}`}>
+                            <Button variant="outline" size="sm" className="cursor-pointer">
+                              View
+                            </Button>
+                            {/* <Button variant="outline" size="sm" className="cursor-pointer">
+                              Edit
+                            </Button> */}
+                          </Link>
+
                         </div>
                       </div>
                     ))}
                   </CardContent>
                   <CardFooter>
-                    <Button variant="outline" className="w-full">
-                      View All Prompts
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <Link href={'/dashboard/all-prompts'}>
+                      <Button variant="outline" className="w-full cursor-pointer">
+                        View All Prompts
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </CardFooter>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="prompts" className="space-y-4">
+              {/* <TabsContent value="prompts" className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>Prompt Scores</CardTitle>
                     <CardDescription>Your recently created and scored prompts</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {promptScores?.map((p) => (
+                    {[...promptScores].sort((a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime()).map((p) => (
                       <div key={p?.id} className="flex flex-col space-y-2 rounded-md border p-4">
                         <div className="flex items-center justify-between">
                           <h3 className="font-medium">Prompt #{p?.id}</h3>
-                          <p className="text-xs text-muted-foreground">2 days ago</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(p?.created_at), { addSuffix: true })}
+                          </p>
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {p?.prompt}
                         </p>
-                        <div className="flex items-center justify-center gap-5">
-                          <span className="text-md text-orange-600 font-medium">Clarity: {p?.clarity}</span>
-                          <span className="text-md text-blue-600 font-medium">Conciseness: {p?.conciseness}</span>
-                          <span className="text-md text-green-600 font-medium">Relevance: {p?.relevance}</span>
-                          <span className="text-md text-amber-500 font-medium">Specificity: {p?.specificity}</span>
-                          <span className="text-md text-red-400 font-medium">Structure: {p?.structure}</span>
-                          <span className="text-md text-gray-600 font-medium">Model Fit: {p?.model_fit}</span>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
+                            <div key={metric} className="flex flex-col gap-1">
+                              <span className="text-sm font-medium capitalize">
+                                {metric.replace('_', ' ')}:
+                                <span className={`ml-1 font-bold ${getColor(p[metric])}`}>
+                                  {p[metric]}
+                                </span>
+                              </span>
+                              <div className="w-full bg-gray-200 h-2 rounded-full">
+                                <div
+                                  className={`h-2 rounded-full ${getBarColor(p[metric])}`}
+                                  style={{ width: `${(p[metric] || 0) * 10}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
+
                         {/* <div className="flex items-center space-x-2 pt-2">
                           <Button variant="outline" size="sm">
                             View
@@ -274,17 +307,100 @@ export default function Dashboard() {
                             Edit
                           </Button>
                         </div> */}
-                      </div>
-                    ))}
-                  </CardContent>
+              {/* </div> */}
+              {/* ))} */}
+              {/* </CardContent>
                   <CardFooter>
                     <Button variant="outline" className="w-full">
                       View All Prompts
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  </CardFooter>
+                  </CardFooter> */}
+              {/* </Card> */}
+              {/* </TabsContent> */}
+
+              <TabsContent value="prompts" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Prompt Scores</CardTitle>
+                    <CardDescription>Latest evaluated prompt and your score timeline</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-8">
+
+                    {/* 1. HIGHLIGHT – Most Recent Prompt */}
+                    {promptScores.length > 0 && (
+                      <div className="p-6 border rounded-xl shadow-sm bg-muted/40">
+                        <h3 className="text-lg font-bold mb-2">✨ Latest Prompt Score</h3>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            Prompt #{promptScores[0]?.id}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(promptScores[0]?.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-4">{promptScores[0]?.prompt}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
+                            <div key={metric} className="flex flex-col gap-1">
+                              <span className="text-sm font-medium capitalize">
+                                {metric.replace('_', ' ')}:
+                                <span className={`ml-1 font-bold ${getColor(promptScores[0][metric])}`}>
+                                  {promptScores[0][metric]}
+                                </span>
+                              </span>
+                              <div className="w-full bg-gray-200 h-2 rounded-full">
+                                <div
+                                  className={`h-2 rounded-full ${getBarColor(promptScores[0][metric])}`}
+                                  style={{ width: `${(promptScores[0][metric] || 0) * 10}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 2. SCORE HISTORY AS "CHAT" */}
+                    <div className="space-y-6">
+                      <h4 className="text-md font-semibold text-muted-foreground">🗂 Previous Prompt Scores</h4>
+                      {[...promptScores]
+                        .slice(1) // exclude latest prompt
+                        .sort((a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime())
+                        .map((p) => (
+                          <div key={p?.id} className="flex flex-col space-y-2 rounded-md border p-4 bg-background hover:shadow-md transition">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-medium">Prompt #{p?.id}</h3>
+                              <p className="text-xs text-muted-foreground">
+                                {formatDistanceToNow(new Date(p?.created_at), { addSuffix: true })}
+                              </p>
+                            </div>
+                            <p className="text-sm text-muted-foreground italic">"{p?.prompt}"</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                              {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
+                                <div key={metric} className="flex flex-col gap-1">
+                                  <span className="text-sm font-medium capitalize">
+                                    {metric.replace('_', ' ')}:
+                                    <span className={`ml-1 font-bold ${getColor(p[metric])}`}>
+                                      {p[metric]}
+                                    </span>
+                                  </span>
+                                  <div className="w-full bg-gray-200 h-2 rounded-full">
+                                    <div
+                                      className={`h-2 rounded-full ${getBarColor(p[metric])}`}
+                                      style={{ width: `${(p[metric] || 0) * 10}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
                 </Card>
               </TabsContent>
+
             </Tabs>
           </div>
 

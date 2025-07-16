@@ -89,6 +89,7 @@ export default function PromptEnhancer() {
             body: JSON.stringify({
               userId: userData?.id,
               prompt: response,
+              originalPrompt: input1
             }),
           });
 
