@@ -375,7 +375,7 @@ export default function Dashboard() {
                                 {formatDistanceToNow(new Date(p?.created_at), { addSuffix: true })}
                               </p>
                             </div>
-                            <p className="text-sm text-muted-foreground italic">"{p?.prompt}"</p>
+                            <p className="text-sm text-muted-foreground italic">{p?.prompt}</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                               {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
                                 <div key={metric} className="flex flex-col gap-1">
