@@ -14,12 +14,26 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { AiOutlineDelete } from "react-icons/ai";
+import {
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerDescription,
+    DrawerFooter,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+} from "@/components/ui/drawer"
+
 
 const Page = () => {
     const user = useUser();
     const [prompts, setPrompts] = useState<any[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const [selectedPrompt, setSelectedPrompt] = useState<string | null>(null);
+    const [showDeleteModel, setShowDeleteModel] = useState(false);
+    const [deletePromptId, setDeletePromptId] = useState<string | null>(null);
 
     useEffect(() => {
         const getPrompts = async () => {
@@ -63,7 +77,29 @@ const Page = () => {
                 }
             );
         }
+        setShowDeleteModel(false);
     }, [prompts]);
+
+    const handleDelete = async ({ promptId }: { promptId: string }) => {
+        if (!deletePromptId) return;
+
+        const { error } = await supabase
+            .from("prompts")
+            .delete()
+            .eq("id", deletePromptId);
+
+        if (error) {
+            toast.error("Error Deleting Prompt");
+            return;
+        }
+
+        toast.success("Prompt Deleted Successfully");
+
+        // Remove Deleted Prompt from state
+        setPrompts((prev) => prev.filter((p) => p.id !== deletePromptId));
+        setDeletePromptId(null);
+        setShowDeleteModel(false);
+    };
 
     return (
         <>
@@ -88,7 +124,7 @@ const Page = () => {
                                 </p>
                             </div>
 
-                            <div className="pt-2">
+                            <div className="pt-2 flex justify-between items-center">
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <Button
@@ -109,12 +145,43 @@ const Page = () => {
                                         </div>
                                     </DialogContent>
                                 </Dialog>
+
+                                {/* Delete Button */}
+                                <div className="cursor-pointer">
+                                    <AiOutlineDelete
+                                        color="red"
+                                        size={20}
+                                        onClick={() => {
+                                            setDeletePromptId(prompt?.id)
+                                            setShowDeleteModel(true)
+                                        }
+                                        }
+                                    />
+                                </div>
                             </div>
+
                         </Card>
                     );
                 })}
 
             </div>
+
+            <Drawer open={showDeleteModel} onOpenChange={setShowDeleteModel}>
+                <DrawerContent>
+                    <div className="mx-auto w-full max-w-sm">
+                        <DrawerHeader>
+                            <DrawerTitle>Are you absolutely sure?</DrawerTitle>
+                            <DrawerDescription>This action cannot be undone.</DrawerDescription>
+                        </DrawerHeader>
+                        <DrawerFooter>
+                            <Button onClick={() => handleDelete({ promptId: deletePromptId! })} className="cursor-pointer">Delete</Button>
+                            <DrawerClose asChild>
+                                <Button variant="outline" className="w-full cursor-pointer">Cancel</Button>
+                            </DrawerClose>
+                        </DrawerFooter>
+                    </div>
+                </DrawerContent>
+            </Drawer>
         </>
     );
 };
