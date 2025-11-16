@@ -403,9 +403,9 @@ export default function PromptLibrary() {
                                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{prompt?.description}</p>
                                     </div>
                                     <Badge variant="outline">{prompt?.niche}</Badge>
-                                    <Link href={`/profile/${prompt?.createdByName}`}>
-                                        <span className="text-xs text-gray-400 ml-2">{prompt?.createdByName}</span>
-                                    </Link>
+                                    {/* <Link href={`/profile/${prompt?.createdByName}`}> */}
+                                    <span className="text-xs text-gray-400 ml-2">{prompt?.createdByName}</span>
+                                    {/* </Link> */}
                                 </div>
                             </CardHeader>
                             <CardContent className="flex-grow">

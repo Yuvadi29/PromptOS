@@ -7,7 +7,7 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey);
 
-export async function getEmbedding(text: string){
+export async function embedText(text: string){
     const res = await genAI.getGenerativeModel({
         model: 'gemini-embedding-001'
     });

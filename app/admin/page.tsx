@@ -27,14 +27,14 @@ export default function AdminLogin() {
           placeholder="User ID"
           value={userid}
           onChange={(e) => setUserid(e.target.value)}
-          className="mb-4"
+          className="mb-4 text-white"
         />
         <Input
           placeholder="Password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-4"
+          className="mb-4 text-white"
         />
         <Button className="w-full" onClick={handleLogin}>
           Login

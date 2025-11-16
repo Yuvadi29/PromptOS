@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   try {
     const { prompt } = await req.json();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const systemPrompt = `You are an expert Prompt Quality Evaluator trained to assess the effectiveness of user-generated prompts for Large Language Models (LLMs) like Gemini or GPT. Your task is to analyze a given prompt and return a strict JSON object with integer scores (1 to 10) across the following six categories:
 

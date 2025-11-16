@@ -2,6 +2,7 @@
   "name": "promptos",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -35,10 +36,11 @@
     "framer-motion": "^12.7.4",
     "groq-sdk": "^0.20.1",
     "gsap": "^3.13.0",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.501.0",
     "next": "15.3.1",
     "next-auth": "^4.24.11",
-    "openai": "^5.8.2",
+    "openai": "^5.19.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
@@ -56,13 +58,16 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/lodash": "^4.17.20",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "dotenv": "^17.2.2",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   }
 }
