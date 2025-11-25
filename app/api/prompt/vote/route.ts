@@ -1,4 +1,4 @@
-import supabase from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -12,14 +12,14 @@ export async function POST(req: Request) {
     const field = type === "likes" ? "likes" : "dislikes";
 
     if (type === "likes") {
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .rpc('increment_likes', {
           promptid: promptId
         })
       if (error) console.error(error)
     } else {
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .rpc('increment_dislikes', {
           promptid: promptId
         })

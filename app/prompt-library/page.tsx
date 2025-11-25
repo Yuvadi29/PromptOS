@@ -37,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import supabase from "@/lib/supabase"
+import {supabaseAdmin} from "@/lib/supabase"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 
@@ -81,7 +81,7 @@ export default function PromptLibrary() {
                 const userIds = [...new Set(data?.map((prompt: any) => prompt?.created_by))];
 
                 // 3. Fetch user info in batch
-                const { data: usersData, error: usersError } = await supabase
+                const { data: usersData, error: usersError } = await supabaseAdmin
                     .from("users")
                     .select("id, name, username") // assuming `name` is the column for username
                     .in("id", userIds);
@@ -133,7 +133,7 @@ export default function PromptLibrary() {
         const userEmail = session?.user?.email;
         if (!userEmail) return toast.error("User not logged in");
 
-        const { data: userData, error } = await supabase
+        const { data: userData, error } = await supabaseAdmin
             .from("users")
             .select("id")
             .eq("email", userEmail)

@@ -1,16 +1,11 @@
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export async function POST(req: NextRequest) {
   try {
     const { response } = await req.json();
 
-    const { error } = await supabase.from("prompt_feedback").insert({
+    const { error } = await supabaseAdmin.from("prompt_feedback").insert({
       prompt: response,
       feedback: true,
     });

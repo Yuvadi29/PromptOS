@@ -52,7 +52,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -67,7 +67,7 @@ export default function PromptSessionPage() {
 
   useEffect(() => {
     const fetchPrompt = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("prompts")
         .select("original_prompt, prompt_value")
         .eq("id", id)
@@ -85,7 +85,7 @@ export default function PromptSessionPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("prompts")
       .update({ prompt_value: enhancedPrompt })
       .eq("id", id);

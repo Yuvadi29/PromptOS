@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { formatDistanceToNow, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -23,13 +23,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     const getPrompts = async () => {
-      const { data: userData } = await supabase
+      const { data: userData } = await supabaseAdmin
         .from('users')
         .select('id')
         .eq('email', user?.email)
         .single();
 
-      const { data, error: promptError, count } = await supabase
+      const { data, error: promptError, count } = await supabaseAdmin
         .from("prompts")
         .select('*', { count: 'exact' })
         .eq('created_by', userData?.id);
@@ -67,7 +67,7 @@ export default function Dashboard() {
         setPromptCount(count || 0);
       }
 
-      const { data: promptScoreData, error: scoreError, count: promptScorecount } = await supabase
+      const { data: promptScoreData, error: scoreError, count: promptScorecount } = await supabaseAdmin
         .from("prompt_scores")
         .select('*', { count: 'exact' })
         .eq('created_by', userData?.id)

@@ -1,11 +1,6 @@
 import NextAuth from "next-auth";
-import { createClient } from '@supabase/supabase-js'
 import Google from "next-auth/providers/google";
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { supabaseAdmin } from "@/lib/supabase";
 
 const handler = NextAuth({
     providers: [
@@ -18,7 +13,7 @@ const handler = NextAuth({
         async signIn({ user }) {
 
             // Save user info to supabase manually
-            const { error } = await supabase.from("users").upsert({
+            const { error } = await supabaseAdmin.from("users").upsert({
                 id: user?.id,
                 name: user?.name,
                 email: user?.email,

@@ -1,4 +1,4 @@
-import supabase from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         }
 
         // Save to db
-        await supabase.from("prompts").insert({
+        await supabaseAdmin.from("prompts").insert({
             created_by: userId,
             prompt_value: prompt,
             original_prompt:originalPrompt

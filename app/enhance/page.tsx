@@ -6,7 +6,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import { Copy, ThumbsDownIcon, ThumbsUpIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
-import supabase from '@/lib/supabase'
+import {supabaseAdmin} from '@/lib/supabase'
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button'
 import { SiOpenai } from "react-icons/si";
@@ -69,7 +69,7 @@ export default function PromptEnhancer() {
           }
 
           // Fetch user id from Supabase
-          const { data: userData, error } = await supabase
+          const { data: userData, error } = await supabaseAdmin
             .from('users')
             .select('id')
             .eq('email', session?.user?.email)

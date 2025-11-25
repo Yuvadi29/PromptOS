@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from "@/context/UserContext";
-import supabase from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import gsap from "gsap";
@@ -36,13 +36,13 @@ const Page = () => {
 
     useEffect(() => {
         const getPrompts = async () => {
-            const { data: userData } = await supabase
+            const { data: userData } = await supabaseAdmin
                 .from("users")
                 .select("id")
                 .eq("email", user?.email)
                 .single();
 
-            const { data, error } = await supabase
+            const { data, error } = await supabaseAdmin
                 .from("prompts")
                 .select("id, prompt_value")
                 .eq("created_by", userData?.id);
@@ -82,7 +82,7 @@ const Page = () => {
     const handleDelete = async ({ promptId }: { promptId: string }) => {
         if (!deletePromptId) return;
 
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from("prompts")
             .delete()
             .eq("id", deletePromptId);

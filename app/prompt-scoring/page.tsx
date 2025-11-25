@@ -5,7 +5,7 @@ import ScoringCriteria from '@/components/ScoringCriteria';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import supabase from '@/lib/supabase';
+import {supabaseAdmin} from '@/lib/supabase';
 import { useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -34,7 +34,7 @@ const Page = () => {
     const timer = setTimeout(async () => {
       if (!session?.user?.email || !prompt || !score) return;
 
-      const { data: userData, error } = await supabase
+      const { data: userData, error } = await supabaseAdmin
         .from('users')
         .select('id')
         .eq('email', session.user.email)

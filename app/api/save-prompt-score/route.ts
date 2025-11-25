@@ -1,4 +1,4 @@
-import supabase from "@/lib/supabase";
+import {supabaseAdmin} from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
             }, { status: 400 });
         }
 
-        await supabase.from("prompt_scores").insert({
+        await supabaseAdmin.from("prompt_scores").insert({
             created_by: userId,
             prompt,
             clarity,

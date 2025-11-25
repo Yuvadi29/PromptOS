@@ -1,13 +1,7 @@
-// /app/api/feedback/route.ts
-import { createClient } from "@supabase/supabase-js";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseAdmin } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +19,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user_id
-    const { data: userData, error: userError } = await supabase
+    const { data: userData, error: userError } = await supabaseAdmin
       .from("users")
       .select("id")
       .eq("email", userEmail)
@@ -38,7 +32,7 @@ export async function POST(req: NextRequest) {
     const userId = userData.id;
 
     // Prevent duplicate feedback
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseAdmin
       .from("prompt_feedback")
       .select("id")
       .eq("user_id", userId)
@@ -49,7 +43,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Feedback already submitted" }, { status: 409 });
     }
 
-    const { error: insertError } = await supabase.from("prompt_feedback").insert({
+    const { error: insertError } = await supabaseAdmin.from("prompt_feedback").insert({
       user_id: userId,
       prompt: response,
       feedback: feedback,

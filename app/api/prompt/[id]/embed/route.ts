@@ -1,18 +1,13 @@
 import { embedText } from "@/lib/embedding";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/lib/supabase";
 import { NextResponse } from "next/server";
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export async function POST(
     _req: Request,
     { params }: { params: { id: string } }
 ) {
     // Fetch Prompt
-    const { data: prompt, error } = await supabase
+    const { data: prompt, error } = await supabaseAdmin
         .from("prompts")
         .select("id,prompt_value")
         .eq("id", params.id)
@@ -27,7 +22,7 @@ export async function POST(
     const embedding = await embedText(prompt?.prompt_value);
 
     // Upsert Embedding
-    const { error: upErr } = await supabase
+    const { error: upErr } = await supabaseAdmin
         .from("prompts")
         .update({ embedding })
         .eq("id", prompt?.id);

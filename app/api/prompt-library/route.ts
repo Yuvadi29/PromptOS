@@ -1,4 +1,4 @@
-import supabase from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         }
 
         // Save to db
-        await supabase.from("prompt_library").insert({
+        await supabaseAdmin.from("prompt_library").insert({
             created_by: userId,
             prompt_title: title,
             prompt_description: description,
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 export async function GET() {
     try {
         // Get data from DB
-        const { data, error } = await supabase.from("prompt_library").select("*");
+        const { data, error } = await supabaseAdmin.from("prompt_library").select("*");
 
         if (error) {
             console.error("Supabase error:", error.message);

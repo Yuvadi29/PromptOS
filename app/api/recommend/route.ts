@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { embedText } from "@/lib/embedding";
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabaseAdmin } from "@/lib/supabase";
 
 type Payload = {
     queryText?: string;
@@ -34,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     // Supabase RPC like query using SQL filter
-    let base = supabase
+    let base = supabaseAdmin
         .rpc("match_prompts", {
             query_embedding: embedding,
             match_count: limit + 3, //Fetch few extra then post-filter
