@@ -2,24 +2,24 @@
 export const dynamic = 'force-dynamic';
 
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { ArrowRight, BookMarked } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { BookMarked, Sparkles, TrendingUp } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/context/UserContext";
 import { useEffect, useState } from "react";
 import { supabaseAdmin } from "@/lib/supabase";
-import { formatDistanceToNow, startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
+import { startOfWeek, endOfWeek, subWeeks, isWithinInterval } from "date-fns";
 import { toast } from "sonner";
-import Link from "next/link";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { PromptCard } from "@/components/dashboard/prompt-card";
+import { ScoreBar } from "@/components/dashboard/score-bar";
+import { motion } from "framer-motion";
 
 export default function Dashboard() {
   const user = useUser();
   const [promptCount, setPromptCount] = useState<number>(0);
   const [prompts, setPrompts] = useState<any[]>([]);
   const [promptScores, setPromptScores] = useState<any[]>([]);
-  const [promptDetla, setPromptDelta] = useState<number>(0);
+  const [promptDelta, setPromptDelta] = useState<number>(0);
 
   useEffect(() => {
     const getPrompts = async () => {
@@ -67,7 +67,7 @@ export default function Dashboard() {
         setPromptCount(count || 0);
       }
 
-      const { data: promptScoreData, error: scoreError, count: promptScorecount } = await supabaseAdmin
+      const { data: promptScoreData } = await supabaseAdmin
         .from("prompt_scores")
         .select('*', { count: 'exact' })
         .eq('created_by', userData?.id)
@@ -83,331 +83,157 @@ export default function Dashboard() {
   }, [user?.email])
 
   const sortedPrompts = prompts ? [...prompts].sort((a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime()) : [];
-
-  function getColor(score: number) {
-    if (score >= 8) return 'text-green-600';
-    if (score >= 5) return 'text-yellow-600';
-    return 'text-red-600';
-  }
-
-  function getBarColor(score: number) {
-    if (score >= 8) return 'bg-green-500';
-    if (score >= 5) return 'bg-yellow-500';
-    return 'bg-red-500';
-  }
+  const latestScore = promptScores.length > 0 ? promptScores[0] : null;
 
   return (
     <SidebarProvider>
-      <div className="flex w-screen">
-        <main className="items-center justify-center p-4 w-full  ">
-          <div className="flex flex-col gap-6 p-6 md:gap-8 md:p-8">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-bold tracking-tight">Welcome Back {user?.name?.split(" ")[0]} 👋</h1>
-              <p className="text-muted-foreground">Let&apos;s get started on Enhancing your Prompts.</p>
-            </div>
+      <div className="flex w-screen min-h-screen bg-zinc-950">
+        <main className="flex-1 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto space-y-8">
+            {/* Header */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-2"
+            >
+              <h1 className="text-4xl font-bold">
+                <span className="bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+                  Welcome Back,{' '}
+                </span>
+                <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+                  {user?.name?.split(" ")[0]} 👋
+                </span>
+              </h1>
+              <p className="text-zinc-400">Let&apos;s get started on enhancing your prompts.</p>
+            </motion.div>
 
-            <Tabs defaultValue="overview" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="recent">Recent Prompts</TabsTrigger>
-                <TabsTrigger value="prompts">My Prompt Scores</TabsTrigger>
+            {/* Tabs */}
+            <Tabs defaultValue="overview" className="space-y-6">
+              <TabsList className="bg-zinc-900 border border-zinc-800">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600">
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="recent" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600">
+                  Recent Prompts
+                </TabsTrigger>
+                <TabsTrigger value="scores" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-600 data-[state=active]:to-amber-600">
+                  Prompt Scores
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {/* <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Prompt Quality Score</CardTitle>
-                      <Sparkles className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      {/* <div className="text-2xl font-bold">78/100</div>
-                      <p className="text-xs text-muted-foreground">+12% from last week</p>
-                      <Progress value={78} className="mt-3" /> */}
-                  {/* <p className="text-md text-muted-foreground">Coming Soon..</p> */}
-                  {/* </CardContent> */}
-                  {/* </Card> */}
-
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Prompts Created</CardTitle>
-                      <BookMarked className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">{promptCount}</div>
-                      <p className="text-xs text-muted-foreground">
-                        {promptDetla > 0 ? `+${promptDetla} more than last week` : promptDetla < 0 ? `${promptDetla} fewer than last week` : `Same as last week`}
-                      </p>
-                    </CardContent>
-                  </Card>
-
-                  {/* <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">Some Data</CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">3.5 hours</div>
-                      <p className="text-xs text-muted-foreground">This month</p>
-                    </CardContent>
-                  </Card> */}
-                </div>
-
-                <div>
-                  {/* <Card>
-                    <CardHeader>
-                      <CardTitle>Prompt Analytics</CardTitle>
-                      <CardDescription>Detailed metrics about your prompt performance</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[400px] flex items-center justify-center mb-4">
-                      {promptScores?.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={promptScores.map((score) => ({
-                              ...score,
-                              created_at: format(new Date(score?.created_at), "MMM d"),
-                            }))}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray={"3 3"} />
-                            <XAxis dataKey={"created_at"} />
-                            <YAxis domain={[0, 10]} />
-                            <Tooltip />
-                            <Legend />
-                            <Line type={"natural"} dataKey={"clarity"} stroke="#f97316" />
-                            <Line type={"natural"} dataKey={"conciseness"} stroke="#3b82f6" />
-                            <Line type={"natural"} dataKey={"relevance"} stroke="#22c55e" />
-                            <Line type={"natural"} dataKey={"specificity"} stroke="#facc15" />
-                            <Line type={"natural"} dataKey={"structure"} stroke="#f87171" />
-                            <Line type={"natural"} dataKey={"model_fit"} stroke="6b7280" />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-muted-foreground">
-                          No prompt score data yet
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card> */}
-
-                  {/* <Card className="lg:col-span-3">
-                    <CardHeader>
-                      <CardTitle>Recommended Templates</CardTitle>
-                      <CardDescription>Pre-built templates to enhance your workflow</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex items-center justify-between space-x-2 rounded-md border p-3">
-                        <div className="flex items-center space-x-3">
-                          <Lightbulb className="h-5 w-5 text-amber-500" />
-                          <span className="font-medium">Creative Writing</span>
-                        </div>
-                        <Star className="h-4 w-4 text-amber-500" />
-                      </div>
-                      <div className="flex items-center justify-between space-x-2 rounded-md border p-3">
-                        <div className="flex items-center space-x-3">
-                          <Sparkles className="h-5 w-5 text-purple-500" />
-                          <span className="font-medium">Code Explanation</span>
-                        </div>
-                        <Star className="h-4 w-4 text-purple-500" />
-                      </div>
-                    </CardContent>
-                    <CardFooter>
-                      <Button variant="outline" className="w-full">
-                        View All Templates
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </CardFooter>
-                  </Card> */}
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-6">
+                {/* Stats Grid */}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  <StatCard
+                    title="Prompts Created"
+                    value={promptCount}
+                    icon={BookMarked}
+                    gradient="from-orange-500 to-amber-500"
+                    trend={{
+                      value: promptDelta,
+                      label: promptDelta === 0 ? 'same as last week' : 'from last week'
+                    }}
+                  />
+                  <StatCard
+                    title="Total Scores"
+                    value={promptScores.length}
+                    icon={Sparkles}
+                    gradient="from-amber-500 to-yellow-500"
+                    description="Prompts evaluated"
+                  />
+                  <StatCard
+                    title="Avg Quality"
+                    value={promptScores.length > 0 ? '8.2/10' : 'N/A'}
+                    icon={TrendingUp}
+                    gradient="from-yellow-500 to-orange-400"
+                    description="Overall prompt quality"
+                  />
                 </div>
               </TabsContent>
 
+              {/* Recent Prompts Tab */}
               <TabsContent value="recent" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Prompts</CardTitle>
-                    <CardDescription>Your recently created and enhanced prompts</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {sortedPrompts?.slice(0, 5).map((prompt, index) => (
-                      <div key={prompt?.id} className="flex flex-col space-y-2 rounded-md border p-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Prompt #{sortedPrompts.length - index}</h3>
-                          <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(prompt?.created_at), { addSuffix: true })}</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {prompt?.prompt_value}
-                        </p>
-                        <div className="flex items-center space-x-2 pt-2">
-                          <Link href={`/dashboard/prompt/${prompt?.id}`}>
-                            <Button variant="outline" size="sm" className="cursor-pointer">
-                              View
-                            </Button>
-                            {/* <Button variant="outline" size="sm" className="cursor-pointer">
-                              Edit
-                            </Button> */}
-                          </Link>
-
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                  <CardFooter>
-                    <Link href={'/dashboard/all-prompts'}>
-                      <Button variant="outline" className="w-full cursor-pointer">
-                        View All Prompts
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              </TabsContent>
-
-              {/* <TabsContent value="prompts" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Prompt Scores</CardTitle>
-                    <CardDescription>Your recently created and scored prompts</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {[...promptScores].sort((a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime()).map((p) => (
-                      <div key={p?.id} className="flex flex-col space-y-2 rounded-md border p-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">Prompt #{p?.id}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(p?.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {p?.prompt}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
-                            <div key={metric} className="flex flex-col gap-1">
-                              <span className="text-sm font-medium capitalize">
-                                {metric.replace('_', ' ')}:
-                                <span className={`ml-1 font-bold ${getColor(p[metric])}`}>
-                                  {p[metric]}
-                                </span>
-                              </span>
-                              <div className="w-full bg-gray-200 h-2 rounded-full">
-                                <div
-                                  className={`h-2 rounded-full ${getBarColor(p[metric])}`}
-                                  style={{ width: `${(p[metric] || 0) * 10}%` }}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* <div className="flex items-center space-x-2 pt-2">
-                          <Button variant="outline" size="sm">
-                            View
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
-                        </div> */}
-              {/* </div> */}
-              {/* ))} */}
-              {/* </CardContent>
-                  <CardFooter>
-                    <Button variant="outline" className="w-full">
-                      View All Prompts
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardFooter> */}
-              {/* </Card> */}
-              {/* </TabsContent> */}
-
-              <TabsContent value="prompts" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Prompt Scores</CardTitle>
-                    <CardDescription>Latest evaluated prompt and your score timeline</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
-
-                    {/* 1. HIGHLIGHT – Most Recent Prompt */}
-                    {promptScores.length > 0 && (
-                      <div className="p-6 border rounded-xl shadow-sm bg-muted/40">
-                        <h3 className="text-lg font-bold mb-2">✨ Latest Prompt Score</h3>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            Prompt #{promptScores[0]?.id}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(promptScores[0]?.created_at), { addSuffix: true })}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">{promptScores[0]?.prompt}</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
-                            <div key={metric} className="flex flex-col gap-1">
-                              <span className="text-sm font-medium capitalize">
-                                {metric.replace('_', ' ')}:
-                                <span className={`ml-1 font-bold ${getColor(promptScores[0][metric])}`}>
-                                  {promptScores[0][metric]}
-                                </span>
-                              </span>
-                              <div className="w-full bg-gray-200 h-2 rounded-full">
-                                <div
-                                  className={`h-2 rounded-full ${getBarColor(promptScores[0][metric])}`}
-                                  style={{ width: `${(promptScores[0][metric] || 0) * 10}%` }}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 2. SCORE HISTORY AS "CHAT" */}
-                    <div className="space-y-6">
-                      <h4 className="text-md font-semibold text-muted-foreground">🗂 Previous Prompt Scores</h4>
-                      {[...promptScores]
-                        .slice(1) // exclude latest prompt
-                        .sort((a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime())
-                        .map((p) => (
-                          <div key={p?.id} className="flex flex-col space-y-2 rounded-md border p-4 bg-background hover:shadow-md transition">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-medium">Prompt #{p?.id}</h3>
-                              <p className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(p?.created_at), { addSuffix: true })}
-                              </p>
-                            </div>
-                            <p className="text-sm text-muted-foreground italic">{p?.prompt}</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                              {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
-                                <div key={metric} className="flex flex-col gap-1">
-                                  <span className="text-sm font-medium capitalize">
-                                    {metric.replace('_', ' ')}:
-                                    <span className={`ml-1 font-bold ${getColor(p[metric])}`}>
-                                      {p[metric]}
-                                    </span>
-                                  </span>
-                                  <div className="w-full bg-gray-200 h-2 rounded-full">
-                                    <div
-                                      className={`h-2 rounded-full ${getBarColor(p[metric])}`}
-                                      style={{ width: `${(p[metric] || 0) * 10}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
+                <div className="grid gap-4">
+                  {sortedPrompts?.slice(0, 5).map((prompt, index) => (
+                    <PromptCard
+                      key={prompt?.id}
+                      id={prompt?.id}
+                      title={`Prompt #${sortedPrompts.length - index}`}
+                      content={prompt?.prompt_value}
+                      createdAt={prompt?.created_at}
+                    />
+                  ))}
+                  {sortedPrompts.length === 0 && (
+                    <div className="text-center py-12 text-zinc-500">
+                      No prompts yet. Start by enhancing your first prompt!
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </div>
               </TabsContent>
 
-            </Tabs>
-          </div>
+              {/* Prompt Scores Tab */}
+              <TabsContent value="scores" className="space-y-6">
+                {latestScore && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-900/50 border border-zinc-800"
+                  >
+                    <h3 className="text-xl font-bold text-white mb-4">
+                      ✨ Latest Prompt Score
+                    </h3>
+                    <p className="text-sm text-zinc-400 mb-6 line-clamp-2">
+                      {latestScore?.prompt}
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
+                        <ScoreBar
+                          key={metric}
+                          label={metric}
+                          score={latestScore[metric] || 0}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
 
+                {/* Previous Scores */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-zinc-400">Previous Scores</h4>
+                  {promptScores.slice(1).map((score) => (
+                    <motion.div
+                      key={score?.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-6 rounded-xl bg-gradient-to-b from-zinc-900 to-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all"
+                    >
+                      <p className="text-sm text-zinc-400 mb-4 line-clamp-2">
+                        {score?.prompt}
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
+                          <ScoreBar
+                            key={metric}
+                            label={metric}
+                            score={score[metric] || 0}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {promptScores.length === 0 && (
+                    <div className="text-center py-12 text-zinc-500">
+                      No scores yet. Try the prompt scoring feature!
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+
+          </div>
         </main>
       </div>
     </SidebarProvider>
-
   );
 }
-

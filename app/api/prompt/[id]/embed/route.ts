@@ -4,8 +4,10 @@ import { NextResponse } from "next/server";
 
 export async function POST(
     _req: Request,
-    { params }: { params: { id: string } }
+    props: { params: Promise<{ id: string }> }
 ) {
+    const params = await props.params;
+
     // Fetch Prompt
     const { data: prompt, error } = await supabaseAdmin
         .from("prompts")

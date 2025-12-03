@@ -1,4 +1,4 @@
-import supabase from "./supabase";
+import { supabase } from "./supabase";
 
 export async function createPromptSession(userId: string, title: string) {
     const { data, error } = await supabase

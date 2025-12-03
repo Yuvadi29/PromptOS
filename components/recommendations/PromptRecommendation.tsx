@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import supabase from "@/lib/supabase";
 import debounce from "lodash/debounce";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   promptId?: string; // filled after enhancement

@@ -1,4 +1,4 @@
-"use server";
+
 
 import { NextRequest } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -62,8 +62,8 @@ User Input Prompt: """${prompt}"""
 
         // Remove ```text``
         const cleanText = chunkText
-        .replace(/```text\n?/g, '')
-        .replace(/```/g, '');
+          .replace(/```text\n?/g, '')
+          .replace(/```/g, '');
         fullText += cleanText;
         controller.enqueue(encoder.encode(cleanText));
       }
