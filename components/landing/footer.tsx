@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Zap, Github, Twitter, Linkedin } from 'lucide-react';
+import { Zap, Github, Twitter, Linkedin, Youtube } from 'lucide-react';
 
 export default function Footer() {
     return (
@@ -24,7 +24,7 @@ export default function Footer() {
                         </p>
                         <div className="flex gap-4">
                             <a
-                                href="https://github.com"
+                                href="https://github.com/Yuvadi29/PromptOS/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 rounded-lg bg-zinc-900 hover:bg-orange-500/10 text-zinc-400 hover:text-orange-500 transition-colors"
@@ -32,15 +32,15 @@ export default function Footer() {
                                 <Github className="w-5 h-5" />
                             </a>
                             <a
-                                href="https://twitter.com"
+                                href="https://www.youtube.com/@adityatrivedidev"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 rounded-lg bg-zinc-900 hover:bg-orange-500/10 text-zinc-400 hover:text-orange-500 transition-colors"
                             >
-                                <Twitter className="w-5 h-5" />
+                                <Youtube className="w-5 h-5" />
                             </a>
                             <a
-                                href="https://linkedin.com"
+                                href="https://www.linkedin.com/in/adityat1702/"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="p-2 rounded-lg bg-zinc-900 hover:bg-orange-500/10 text-zinc-400 hover:text-orange-500 transition-colors"
@@ -91,11 +91,11 @@ export default function Footer() {
                                     Blog
                                 </Link>
                             </li>
-                            <li>
+                            {/* <li>
                                 <Link href="#" className="text-zinc-400 hover:text-orange-400 transition-colors">
                                     Careers
                                 </Link>
-                            </li>
+                            </li> */}
                             <li>
                                 <Link href="#" className="text-zinc-400 hover:text-orange-400 transition-colors">
                                     Contact

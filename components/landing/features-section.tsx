@@ -67,11 +67,11 @@ const FeatureCard = ({ feature, index, range, targetScale }: any) => {
     const scale = useTransform(scrollYProgress, range, [1, targetScale]);
 
     return (
-        <div ref={container} className="h-screen flex items-center justify-center sticky top-0">
+        <div ref={container} className="h-screen flex items-center justify-center sticky top-0 ">
             <motion.div
                 style={{ scale, top: `calc(-5% + ${index * 25}px)` }}
                 className={cn(
-                    "relative flex flex-col items-center justify-center p-12 rounded-3xl border backdrop-blur-xl w-full max-w-4xl mx-auto h-[500px] shadow-2xl origin-top",
+                    "relative flex flex-col items-center justify-center p-12 rounded-3xl border backdrop-blur-xl w-full max-w-4xl mx-auto h-[500px] shadow-2xl origin-top ",
                     "bg-card/90",
                     feature.border
                 )}

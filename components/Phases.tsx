@@ -60,10 +60,10 @@ const PhaseCard = ({ phase, index }: { phase: typeof phases[0]; index: number })
                 {phase.description}
             </p>
 
-            <div className="mt-auto flex items-center gap-2 text-sm font-medium text-primary cursor-pointer group">
+            {/* <div className="mt-auto flex items-center gap-2 text-sm font-medium text-primary cursor-pointer group">
                 <span>Learn more</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-            </div>
+            </div> */}
 
             {/* Decorative gradient blob */}
             <div
