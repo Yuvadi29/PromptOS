@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(
     _req: Request,
-    props: { params: Promise<{ id: string }> }
+    props: { params: Promise<{ promptId: string }> }
 ) {
     const params = await props.params;
 
@@ -12,7 +12,7 @@ export async function POST(
     const { data: prompt, error } = await supabaseAdmin
         .from("prompts")
         .select("id,prompt_value")
-        .eq("id", params.id)
+        .eq("id", params.promptId)
         .single();
 
     if (error || !prompt) {

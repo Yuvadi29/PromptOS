@@ -5,9 +5,9 @@ import { NextResponse } from "next/server";
 export async function GET(
     req: Request,
     { params }: {
-        params: {
+        params: Promise<{
             promptId: string
-        }
+        }>
     }
 ) {
     const { promptId } = await params;
@@ -38,12 +38,12 @@ export async function GET(
 export async function POST(
     req: Request,
     { params }: {
-        params: {
+        params: Promise<{
             promptId: string
-        }
+        }>
     }
 ) {
-    const { promptId } = params;
+    const { promptId } = await params;
     const body = await req.json();
     const { content, source = "user", reason = null, meta = {} } = body;
 
