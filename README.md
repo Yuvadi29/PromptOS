@@ -1,105 +1,59 @@
 <!-- Project Banner -->
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/43200edf-3801-45e3-9c62-e7e3e9b19241" alt="PromptOS Banner" width="100%" />
+  <img src="public/og-image.png" alt="PromptOS Banner" width="100%" />
 </p>
 
 <h1 align="center">🚀 PromptOS</h1>
 <p align="center">
-  An intelligent, LLM-agnostic platform that enhances, learns from, and personalizes prompts across multiple domains like code, marketing, case studies, and image generation.
+  An intelligent, LLM-agnostic platform that enhances, learns from, and personalizes prompts across multiple domains.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/build-passing-brightgreen" />
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" />
-  <img src="https://img.shields.io/badge/readme-up--to--date-orange" />
+  <img src="https://img.shields.io/badge/Next.js-15-black" />
+  <img src="https://img.shields.io/badge/Three.js-Visuals-orange" />
 </p>
 
 ---
 
 ## ⭐ Vision
 
-PromptOS is a centralized prompt intelligence system that understands, evolves, and adapts across domains. Acting as a Prompt Operating System, it continuously improves using user feedback and reinforcement learning — with **Gemini** as the fine-tuned core engine.
+PromptOS is a centralized prompt intelligence system that understands, evolves, and adapts. Acting as a Prompt Operating System, it continuously improves using user feedback and reinforcement learning — with **Gemini 2.0 Flash** as the core engine.
 
 ---
 
-## 📍 Phase 1 – MVP Roadmap
+## ✨ Features
 
-| Module                | Description                                                              |
-| --------------------- | ------------------------------------------------------------------------ |
-| Prompt Enhancer       | User inputs a prompt → Enhanced by Gemini → Before/After shown           |
-| LLM Output Comparison | Toggle outputs from GPT-4, Claude, Gemini                                |
-| Prompt Scoring        | Predict Prompt Effectiveness (Clarity, Specificity, Model Compatibility) |
-| Feedback Collector    | Thumbs up/down + comments + save to profile                              |
-| Prompt Library        | Save enhanced prompts by category (e.g. code, image, case study)         |
-| Prompt Playground     | Edit, retry, experiment with variants                                    |
-| User Profile + Memory | Personalized prompt tuning based on usage & feedback                     |
+### ⚡ Intelligence & Enhancement
+- **Auto-Enhancement**: Instantly rewrite vague prompts into structured, high-performing versions using Gemini 2.0.
+- **Prompt Scoring**: Get objective scores (0-10) on **Clarity**, **Specificity**, **Relevance**, and **Model Fit**.
+- **LLM Comparison**: Compare your original prompt against the enhanced version side-by-side.
 
----
-
-## 🧩 Phase 2 – Power Features
-
-| Feature                   | Description                                                         |
-| ------------------------- | ------------------------------------------------------------------- |
-| Prompt-to-Agent           | Turn repeated prompt patterns into custom “Prompt Agents”           |
-| Feedback Learning Loop    | Fine-tune Gemini on user feedback & new improved prompts            |
-| Prompt Versioning         | Track how a prompt evolves with edits, feedback, and output quality |
-| Prompt Collaboration      | Share Prompt Packs / Agents with teams or public                    |
-| Auto-Prompt Selector      | Based on input intent → auto-picks best model + template            |
-| Analytics Dashboard       | Visualize prompt usage, effectiveness, feedback scores              |
+### 🛠️ Workflow & Management
+- **Version Control**: Every edit is saved. Rollback to any previous version of your prompt instantly.
+- **Prompt Library**: A centralized dashboard to search, filter, and manage all your prompts.
+- **Analytics**: Track your prompt creation habits and quality improvements over time.
 
 ---
 
-## 🎯 Target Use Cases
+## 🎯 Use Cases
 
-| Use Case                                 | Features                                                            |
+| Use Case                                 | How PromptOS Helps                                                  |
 | ---------------------------------------- | ------------------------------------------------------------------- |
-| Code Review & Refactoring                | Detect bad code prompts → rewrite for clarity, ask better questions |
-| Case Study Generation                    | Create structured case study templates with dynamic input           |
-| Marketing Copy / SEO                     | Enhance prompts for tone, keyword focus, emotional appeal           |
-| Image Prompting (DALL·E, Midjourney)     | Reframe vague prompts into vivid visual descriptions                |
-| Study / Learning Prompts                 | Build Socratic-style queries, flashcards, and concept chains        |
+| **Code Review**                          | Rewrite "fix this code" into detailed context-aware instructions.   |
+| **Marketing Copy**                       | Inject tone, emotional hook, and keyword constraints automatically. |
+| **Image Generation**                     | Expand short concepts into vivid, descriptive visual prompts.       |
+| **Learning & Study**                     | Structure vague topics into Socratic study plans and flashcards.    |
 
 ---
 
-## 🧠 Training Gemini – Strategy
+## 🛠 Tech Stack
 
-We plan to **fine-tune Gemini (via Google Vertex AI)** using:
-
-1. **Prompt-Output Pairs**  
-   - Original → Enhanced Prompt  
-   - Prompt → Expected Output (optional)
-
-2. **Feedback Dataset**  
-   - Prompt + Response + User Rating + Comments
-
-3. **Use-Case Context**  
-   - Domain tags (e.g., `code`, `design`, `marketing`)  
-   - User profile features (experience level, preference style)
-
-4. **RLHF / RLAIF Loop**  
-   - Fine-tune on user-preferred enhancements  
-   - Retrain daily/weekly on top-rated data
-
----
-
-## 🧪 Metrics for Success
-
-| Metric                   | Why it matters                                |
-| ------------------------ | --------------------------------------------- |
-| Prompt Improvement Score | % increase in prompt clarity/specificity      |
-| Feedback Positivity Rate | Measure user satisfaction per enhancement     |
-| Prompt Reuse Frequency   | Indicates perceived value                     |
-| Time-to-Insight          | Time saved compared to manual prompt crafting |
-| Output Quality Score     | (Optional, rated by model or human)           |
-
----
-
-## 🤝 Get Involved
-
-- Suggest new prompt categories
-- Join the feedback learning loop
-- Collaborate on Prompt Agents
-- Build open-source prompt intelligence tools
+- **Framework**: Next.js 15 (App Router) with TypeScript
+- **AI**: Google Gemini 2.0 Flash (via Google Generative AI SDK)
+- **Database**: Supabase (PostgreSQL)
+- **UI**: Tailwind CSS, Shadcn/UI, Framer Motion
 
 ---
 
