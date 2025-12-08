@@ -61,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="author" content="PromptOS" />
         <meta name="theme-color" content="#ffffff" />
         <link rel="canonical" href="https://promptos.in/" />
+        <link rel="icon" href="/og-image.ico" sizes="any"/>
         <script type="application/ld+json">
           {`
             {

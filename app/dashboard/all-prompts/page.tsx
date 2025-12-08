@@ -7,13 +7,8 @@ import { toast } from "sonner";
 import gsap from "gsap";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
+import Link from 'next/link';
+
 import { AiOutlineDelete } from "react-icons/ai";
 import {
     Drawer,
@@ -124,26 +119,15 @@ const Page = () => {
                             </div>
 
                             <div className="pt-2 flex justify-between items-center">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="link"
-                                            size="sm"
-                                            className="text-xs p-0 h-auto cursor-pointer"
-                                            onClick={() => setSelectedPrompt(cleanedPrompt)}
-                                        >
-                                            Read more
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="max-w-2xl">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-base">Full Prompt</DialogTitle>
-                                        </DialogHeader>
-                                        <div className="max-h-[400px] overflow-y-auto whitespace-pre-wrap text-sm text-muted-foreground">
-                                            {cleanedPrompt}
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
+                                <Link href={`/dashboard/prompt/${prompt.id}`} passHref>
+                                    <Button
+                                        variant="link"
+                                        size="sm"
+                                        className="text-xs p-0 h-auto cursor-pointer"
+                                    >
+                                        Read more
+                                    </Button>
+                                </Link>
 
                                 {/* Delete Button */}
                                 <div className="cursor-pointer">

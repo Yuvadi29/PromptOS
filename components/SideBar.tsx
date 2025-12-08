@@ -6,6 +6,7 @@ import Link from 'next/link';
 import ProfileModal from './ProfileModal';
 import { signOut, useSession } from 'next-auth/react';
 import { redirect, usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 // Menu Items
 const items = [
@@ -60,10 +61,23 @@ const SideBar = ({ user }: SideBarProps) => {
     <Sidebar className="border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-2 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          {/* <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Sparkles className="size-5" />
+          </div> */}
+          {/* <span className="text-lg font-bold tracking-tight">PromptOS</span> */}
+          <div className="flex items-center gap-3 px-2">
+            <Image
+              src="/og-image.ico"
+              alt="PromptOS Logo"
+              width={40}
+              height={40}
+              className="rounded-lg shadow-[0_0_12px_rgba(255,120,0,0.35)]"
+              priority
+            />
+            <span className="text-xl font-semibold tracking-tight text-orange-600">PromptOS</span>
           </div>
-          <span className="text-lg font-bold tracking-tight">PromptOS</span>
+
+
         </div>
       </SidebarHeader>
 

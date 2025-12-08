@@ -13,6 +13,8 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { PromptCard } from "@/components/dashboard/prompt-card";
 import { ScoreBar } from "@/components/dashboard/score-bar";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const user = useUser();
@@ -164,6 +166,14 @@ export default function Dashboard() {
                       createdAt={prompt?.created_at}
                     />
                   ))}
+                  <Link href={"/dashboard/all-prompts"}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                    >
+                      View All Prompts
+                    </Button>
+                  </Link>
                   {sortedPrompts.length === 0 && (
                     <div className="text-center py-12 text-zinc-500">
                       No prompts yet. Start by enhancing your first prompt!

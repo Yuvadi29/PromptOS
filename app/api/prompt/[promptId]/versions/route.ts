@@ -6,16 +6,16 @@ export async function GET(
     req: Request,
     { params }: {
         params: {
-            id: string
+            promptId: string
         }
     }
 ) {
-    const { id } = await params;
+    const { promptId } = await params;
 
     const { data, error } = await supabaseAdmin
         .from("prompt_version_stats")
         .select("*")
-        .eq("prompt_id", id)
+        .eq("prompt_id", promptId)
         .order("version_number", {
             ascending: false
         });
@@ -39,11 +39,11 @@ export async function POST(
     req: Request,
     { params }: {
         params: {
-            id: string
+            promptId: string
         }
     }
 ) {
-    const { id } = params;
+    const { promptId } = params;
     const body = await req.json();
     const { content, source = "user", reason = null, meta = {} } = body;
 
@@ -57,7 +57,7 @@ export async function POST(
         .from("prompt_versions")
         .insert([
             {
-                prompt_id: id,
+                prompt_id: promptId,
                 content,
                 source,
                 reason,

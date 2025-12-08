@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string; versionId: string } }
+  { params }: { params: { promptId: string; versionId: string } }
 ) {
-  const { id, versionId } = await params;
+  const { promptId, versionId } = await params;
 
   // Step 1 — load old version
   const { data: old, error: oldErr } = await supabaseAdmin
@@ -26,7 +26,7 @@ export async function POST(
     .from("prompt_versions")
     .insert([
       {
-        prompt_id: id,
+        prompt_id: promptId,
         content: old.content,
         source: "revert",
         reason: `Reverted to version ${old.version_number} (${old.id})`

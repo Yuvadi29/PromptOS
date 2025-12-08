@@ -1,98 +1,76 @@
-// 'use client';
-// import { useParams } from "next/navigation";
-// import { useEffect, useState } from "react";
-// import supabase from "@/lib/supabase";
-// import { Textarea } from "@/components/ui/textarea";
-// import { Button } from "@/components/ui/button";
-
-// export default function PromptSessionPage() {
-//   const { id } = useParams();
-//   const [prompt, setPrompt] = useState('');
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchPrompt = async () => {
-//       const { data, error } = await supabase
-//         .from("prompts")
-//         .select("prompt_value")
-//         .eq("id", id)
-//         .single();
-
-//       if (data) {
-//         setPrompt(data.prompt_value);
-//       }
-//       setLoading(false);
-//     };
-//     fetchPrompt();
-//   }, [id]);
-
-//   const handleSave = async () => {
-//     const { error } = await supabase
-//       .from("prompts")
-//       .update({ prompt_value: prompt })
-//       .eq("id", id);
-
-//     if (!error) {
-//       alert("Prompt updated!");
-//     }
-//   };
-
-//   if (loading) return <div className="p-6">Loading...</div>;
-
-//   return (
-//     <div className="p-6 space-y-4 max-w-3xl mx-auto">
-//       <h1 className="text-2xl font-bold">Edit Prompt Session</h1>
-//       <Textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={10} />
-//       <Button onClick={handleSave}>Save Changes</Button>
-//     </div>
-//   );
-// }
-
 'use client';
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { supabaseAdmin } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase"; // Make sure this is client-allowed or switch to supabase browser client
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, History } from "lucide-react";
+import VersionHistoryDrawer from "@/components/VersionHistoryDrawer";
+import CompareModal from "@/components/CompareModal";
+
+interface PromptVersion {
+  version_number: number;
+  source: string;
+  content: string;
+  prompt_id: string;
+}
 
 export default function PromptSessionPage() {
   const { id } = useParams();
-  const [originalPrompt, setOriginalPrompt] = useState('');
-  const [enhancedPrompt, setEnhancedPrompt] = useState('');
+
+  const [currentVersion, setCurrentVersion] = useState<PromptVersion | null>(null);
+  const [enhancedPrompt, setEnhancedPrompt] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Fetch latest version (highest version_number)
   useEffect(() => {
-    const fetchPrompt = async () => {
-      const { data, error } = await supabaseAdmin
-        .from("prompts")
-        .select("original_prompt, prompt_value")
-        .eq("id", id)
-        .single();
+    const fetchLatestVersion = async () => {
+      // Load latest version from prompt_versions
+      const { data: versions, error } = await supabaseAdmin
+        .from("prompt_versions")
+        .select("*")
+        .eq("prompt_id", id)
+        .order("version_number", { ascending: false })
+        .limit(1);
 
-      if (data) {
-        setOriginalPrompt(data.original_prompt);
-        setEnhancedPrompt(data.prompt_value);
+      if (versions && versions.length > 0) {
+        const latest = versions[0];
+        setCurrentVersion(latest);
+        setEnhancedPrompt(latest.content);
       }
+
       setLoading(false);
     };
 
-    fetchPrompt();
+    fetchLatestVersion();
   }, [id]);
 
+  // Create a new version instead of updating prompts table
   const handleSave = async () => {
     setSaving(true);
-    const { error } = await supabaseAdmin
-      .from("prompts")
-      .update({ prompt_value: enhancedPrompt })
-      .eq("id", id);
+
+    const { data, error } = await supabaseAdmin
+      .from("prompt_versions")
+      .insert([
+        {
+          prompt_id: id,
+          content: enhancedPrompt,
+          source: "user",
+          reason: "User edited prompt in editor"
+        }
+      ])
+      .select()
+      .single();
 
     if (!error) {
-      alert("Enhanced prompt updated!");
+      alert(`New version created: v${data.version_number}`);
+      setCurrentVersion(data);
     }
+
     setSaving(false);
   };
 
@@ -106,47 +84,72 @@ export default function PromptSessionPage() {
 
   return (
     <div className="p-6 space-y-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold tracking-tight">Prompt Editor</h1>
-      <p className="text-muted-foreground text-sm">
-        Review and enhance your AI prompt below.
-      </p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Original Prompt</CardTitle>
-          <CardDescription>This is the unedited version entered by the user.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Textarea value={originalPrompt} readOnly rows={6} className="bg-muted cursor-not-allowed" />
-        </CardContent>
-      </Card>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Prompt Editor</h1>
+          <p className="text-muted-foreground text-sm">
+            Edit your optimized prompt and manage versions.
+          </p>
+        </div>
 
+        {/* Version History Button */}
+        <Button variant="outline" onClick={() => setDrawerOpen(true)} className="cursor-pointer">
+          <History className="h-4 w-4 mr-2" />
+          Version History
+        </Button>
+      </div>
+
+      {/* Version Badge (shows current version) */}
+      {currentVersion && (
+        <p className="text-sm text-muted-foreground">
+          Current Version: <strong>v{currentVersion.version_number}</strong> — {currentVersion.source}
+        </p>
+      )}
+
+      {/* Enhanced Prompt Editor */}
       <Card>
         <CardHeader>
           <CardTitle>Enhanced Prompt</CardTitle>
-          <CardDescription>Edit and save your optimized prompt here.</CardDescription>
+          <CardDescription>This is the version you are currently editing.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Textarea
             value={enhancedPrompt}
             onChange={(e) => setEnhancedPrompt(e.target.value)}
-            rows={10}
+            rows={12}
           />
+
           <Button onClick={handleSave} disabled={saving}>
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
+                Saving New Version...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Save Changes
+                Save as New Version
               </>
             )}
           </Button>
         </CardContent>
       </Card>
+
+      {/* Drawer UI */}
+      {id && (
+        <VersionHistoryDrawer
+          promptId={Array.isArray(id) ? id[0] : id}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          onRevertSuccess={(newVersionId) => {
+            console.log("Reverted to version:", newVersionId);
+          }}
+        />
+      )}
+
+      {id && <CompareModal promptId={Array.isArray(id) ? id[0] : id} currentVersionContent={enhancedPrompt} />}
     </div>
   );
 }
