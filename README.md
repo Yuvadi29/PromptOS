@@ -57,6 +57,15 @@ PromptOS is a centralized prompt intelligence system that understands, evolves, 
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions! Please check out our [Contribution Guidelines](CONTRIBUTING.md) for details on how to:
+- 🛠 Setup your customized environment
+- 🐛 Report bugs
+- 📝 Write and submit new blog posts
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License.

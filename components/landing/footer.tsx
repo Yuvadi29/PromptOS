@@ -82,24 +82,14 @@ export default function Footer() {
                         <h3 className="font-semibold text-white mb-4">Company</h3>
                         <ul className="space-y-2">
                             <li>
-                                <Link href="#" className="text-zinc-400 hover:text-orange-400 transition-colors">
-                                    About
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-zinc-400 hover:text-orange-400 transition-colors">
+                                <Link href="/blog" className="text-zinc-400 hover:text-orange-400 transition-colors">
                                     Blog
                                 </Link>
                             </li>
-                            {/* <li>
-                                <Link href="#" className="text-zinc-400 hover:text-orange-400 transition-colors">
-                                    Careers
-                                </Link>
-                            </li> */}
                             <li>
-                                <Link href="#" className="text-zinc-400 hover:text-orange-400 transition-colors">
+                                <a href="mailto:letstalkaditya@gmail.com" className="text-zinc-400 hover:text-orange-400 transition-colors">
                                     Contact
-                                </Link>
+                                </a>
                             </li>
                         </ul>
                     </div>

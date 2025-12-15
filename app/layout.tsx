@@ -1,4 +1,5 @@
 import "./globals.css";
+import "highlight.js/styles/atom-one-dark.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from 'sonner';
 import { Geist, Geist_Mono, Inter } from 'next/font/google';
@@ -61,7 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="author" content="PromptOS" />
         <meta name="theme-color" content="#ffffff" />
         <link rel="canonical" href="https://promptos.in/" />
-        <link rel="icon" href="/og-image.ico" sizes="any"/>
+        <link rel="icon" href="/og-image.ico" sizes="any" />
         <script type="application/ld+json">
           {`
             {
