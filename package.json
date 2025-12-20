@@ -47,7 +47,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.501.0",
     "ml-kmeans": "^7.0.0",
-    "next": "15.5.7",
+    "next": "15.5.9",
     "next-auth": "^4.24.11",
     "next-mdx-remote": "^5.0.0",
     "openai": "^5.19.1",
