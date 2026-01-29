@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY!
 );
 
 const modelId = "openai/o3"; // Replace with your OpenRouter model
@@ -14,8 +14,12 @@ Return the output in JSON: { "domain": "value", "type": "value" }.
 `;
 
 export async function GET() {
-  // Fetch all prompts
-  const { data: prompts, error } = await supabase.from("prompts").select("prompt_value");
+  // Fetch recent prompts, limited to 20 to avoid OpenRouter timeouts/rate limits during analysis
+  const { data: prompts, error } = await supabase
+    .from("prompts")
+    .select("prompt_value")
+    .order("created_at", { ascending: false })
+    .limit(20);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

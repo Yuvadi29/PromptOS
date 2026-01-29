@@ -54,7 +54,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Error saving feedback" }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    // Track stats & Check badges
+    const { incrementUserStat } = await import("@/lib/user-stats");
+    const newBadges = await incrementUserStat(userId, 'feedback_given');
+
+    return NextResponse.json({ success: true, newBadges }, { status: 200 });
 
   } catch (error) {
     console.error("Unexpected Error:", error);

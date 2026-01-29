@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
+import { User, MessageSquare } from "lucide-react";
 
 export default function PromptsTab() {
   const [prompts, setPrompts] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true); // prevent hydration mismatch
+    setMounted(true);
     fetch("/api/admin/prompts-by-user")
       .then((res) => res.json())
       .then(setPrompts);
@@ -17,53 +18,69 @@ export default function PromptsTab() {
 
   if (!mounted) {
     return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <p className="text-gray-400 text-lg animate-pulse">Loading...</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 animate-pulse">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-64 bg-white/5 rounded-2xl"></div>
+        ))}
       </div>
     );
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-extrabold mb-8 text-center bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent">
-        Prompts by User
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400">
+        Top Contributors <span className="text-white/40 text-sm font-medium ml-2">By Prompt Volume</span>
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {prompts?.map((row) => (
           <Card
             key={row.user_id}
-            className="relative p-6 rounded-2xl border border-white/20 shadow-xl bg-white/10 backdrop-blur-lg transition-transform hover:scale-105 hover:shadow-2xl"
-            style={{
-              boxShadow:
-                "0 8px 32px 0 rgba(31, 38, 135, 0.37), 0 1.5px 4px 0 rgba(0,0,0,0.10)",
-              border: "1px solid rgba(255,255,255,0.18)",
-            }}
+            className="group relative p-6 bg-[#0F0F12] border-white/5 hover:border-emerald-500/30 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5 hover:-translate-y-1"
           >
-            <div className="flex flex-col items-center gap-3">
-              <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-white/30 shadow-lg mb-2">
-                <Image
-                  src={row?.user_image || "/avatar-placeholder.png"}
-                  alt={row?.user_name || "User"}
-                  fill
-                  className="object-cover"
-                />
+            <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div className="flex flex-col items-center gap-4 relative z-10">
+              <div className="relative w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 border border-white/10 group-hover:border-emerald-500/50 transition-colors">
+                <div className="w-full h-full rounded-full overflow-hidden relative bg-black">
+                  {row?.user_image ? (
+                    <Image
+                      src={row.user_image}
+                      alt={row?.user_name || "User"}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-900 text-gray-500">
+                      <User className="h-8 w-8" />
+                    </div>
+                  )}
+                </div>
+                <div className="absolute -bottom-2 -right-2 bg-black border border-white/10 p-1.5 rounded-full">
+                  <MessageSquare className="h-3 w-3 text-emerald-400" />
+                </div>
               </div>
-              <p className="font-semibold text-white text-lg text-center">
-                {row.user_name || "Unknown User"}
-              </p>
-              <p className="text-xs text-gray-300 text-center break-all">
-                {row.user_email}
-              </p>
-              <div className="flex flex-col items-center mt-4">
-                <span className="text-3xl font-extrabold text-green-300 drop-shadow">
-                  {row.prompt_count}
-                </span>
-                <span className="text-xs text-gray-400 tracking-wide uppercase">
-                  Prompts
-                </span>
+
+              <div className="text-center">
+                <p className="font-semibold text-white group-hover:text-emerald-300 transition-colors truncate max-w-[200px]">
+                  {row.user_name || "Unknown User"}
+                </p>
+                <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                  {row.user_email}
+                </p>
+              </div>
+
+              <div className="w-full pt-4 border-t border-white/5 mt-2">
+                <div className="flex flex-col items-center">
+                  <span className="text-3xl font-bold text-white group-hover:text-emerald-400 transition-colors">
+                    {row.prompt_count}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-widest text-gray-500 font-medium mt-1">
+                    Prompts Created
+                  </span>
+                </div>
               </div>
             </div>
-            <div className="absolute inset-0 rounded-2xl pointer-events-none" />
           </Card>
         ))}
       </div>

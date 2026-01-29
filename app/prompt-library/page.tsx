@@ -25,6 +25,8 @@ interface Prompt {
     niche: string;
     likes: number;
     dislikes: number;
+    createdByName?: string;
+    createdByImage?: string;
 }
 
 const niches = ["All", "Creative Writing", "Technical Writing", "Marketing", "Programming", "HR"]
@@ -39,7 +41,7 @@ export default function PromptLibrary() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchPromptsWithUsernames = async () => {
+        const fetchPrompts = async () => {
             try {
                 const response = await fetch("/api/prompt-library", {
                     method: "GET",
@@ -47,25 +49,12 @@ export default function PromptLibrary() {
                 });
 
                 const data = await response.json();
-                const userIds = [...new Set(data?.map((prompt: any) => prompt?.created_by))];
 
-                const { data: usersData, error: usersError } = await supabaseAdmin
-                    .from("users")
-                    .select("id, name, username")
-                    .in("id", userIds);
-
-                if (usersError) {
-                    console.error("Error fetching user data:", usersError);
-                    toast.error("Failed to load user info.");
-                    return;
-                }
-
-                const userMap = new Map(usersData.map(user => [user.id, user.username || user.name]));
-
-                const formatted = data?.map((prompt: any, index: number) => ({
-                    id: prompt?.id || index + 1,
+                const formatted = data?.map((prompt: any) => ({
+                    id: prompt?.id,
                     createdBy: prompt?.created_by,
-                    createdByName: userMap?.get(prompt?.created_by) || "Unknown",
+                    createdByName: prompt?.users?.name || prompt?.users?.username || "Unknown",
+                    createdByImage: prompt?.users?.image,
                     title: prompt?.prompt_title,
                     description: prompt?.prompt_description,
                     promptText: prompt?.promptText,
@@ -83,7 +72,7 @@ export default function PromptLibrary() {
             }
         };
 
-        fetchPromptsWithUsernames();
+        fetchPrompts();
     }, []);
 
     const [newPrompt, setNewPrompt] = useState({
@@ -392,7 +381,12 @@ export default function PromptLibrary() {
                                     {/* Header */}
                                     <div className="flex items-start justify-between mb-3">
                                         <div className="flex-1">
-                                            <h3 className="font-semibold text-white mb-1 line-clamp-1 group-hover:text-orange-400 transition-colors">{prompt?.title}</h3>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <h3 className="font-semibold text-white group-hover:text-orange-400 transition-colors">{prompt?.title}</h3>
+                                            </div>
+                                            <p className="text-xs text-zinc-500 mb-2 flex items-center gap-1">
+                                                by <span className="text-zinc-300 font-medium">{prompt?.createdByName}</span>
+                                            </p>
                                             <p className="text-sm text-zinc-400 line-clamp-2">{prompt?.description}</p>
                                         </div>
                                         <Badge variant="outline" className="ml-2 border-zinc-700 text-zinc-300 shrink-0">

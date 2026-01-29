@@ -14,6 +14,23 @@ export async function POST(req: NextRequest) {
   try {
     const { prompt } = await req.json();
 
+    // 1. Auth & Stats
+    let newBadges: any[] = [];
+    try {
+      const { getServerSession } = await import("next-auth");
+      const { authOptions } = await import("@/lib/auth");
+      const session = await getServerSession(authOptions);
+
+      if (session?.user?.email) {
+        const { supabaseAdmin } = await import("@/lib/supabase");
+        const { data: u } = await supabaseAdmin.from('users').select('id').eq('email', session.user.email).single();
+        if (u) {
+          const { incrementUserStat } = await import("@/lib/user-stats");
+          newBadges = await incrementUserStat(u.id, 'prompt_scores_viewed');
+        }
+      }
+    } catch (e) { console.error("Stats error", e); }
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const systemPrompt = `You are an expert Prompt Quality Evaluator trained to assess the effectiveness of user-generated prompts for Large Language Models (LLMs) like Gemini or GPT. Your task is to analyze a given prompt and return a strict JSON object with integer scores (1 to 10) across the following six categories:
@@ -70,6 +87,7 @@ You must also include one brief and actionable suggestion for improvement (if an
       overallScore,
       criteriaScores,
       feedback: raw.tip || "Great work! No improvement needed.",
+      newBadges
     });
 
   } catch (error) {

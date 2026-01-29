@@ -26,7 +26,7 @@ export async function POST(req: Request) {
             status: 200
         })
     } catch (error) {
-        return NextResponse.json({ message: error}, { status: 500 });
+        return NextResponse.json({ message: error }, { status: 500 });
 
     }
 };
@@ -34,8 +34,18 @@ export async function POST(req: Request) {
 
 export async function GET() {
     try {
-        // Get data from DB
-        const { data, error } = await supabaseAdmin.from("prompt_library").select("*");
+        // Get data from DB with user details
+        const { data, error } = await supabaseAdmin
+            .from("prompt_library")
+            .select(`
+                *,
+                users (
+                    name,
+                    username,
+                    image
+                )
+            `)
+            .order("created_at", { ascending: false });
 
         if (error) {
             console.error("Supabase error:", error.message);
