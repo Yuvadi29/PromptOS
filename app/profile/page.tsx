@@ -275,69 +275,74 @@ export default function ProfilePage() {
 
             {/* Prompt Detail Modal */}
             <Dialog open={!!selectedPrompt} onOpenChange={(open) => !open && setSelectedPrompt(null)}>
-                <DialogContent className="max-w-6xl h-[calc(100vh-4rem)] overflow-y-auto bg-zinc-900 border-zinc-800 text-white">
-                    <DialogHeader>
+                <DialogContent className="max-w-[95vw] md:max-w-[85vw] lg:max-w-7xl h-[90vh] md:h-[80vh] flex flex-col bg-zinc-900 border-zinc-800 text-white p-0 overflow-hidden">
+                    <DialogHeader className="p-6 pb-2 shrink-0">
                         <DialogTitle className="text-2xl font-bold text-orange-400 flex items-center gap-2">
                             <Sparkles className="w-6 h-6" />
                             Prompt Details
                         </DialogTitle>
                         <DialogDescription className="text-zinc-400">
-                            View your original prompt and its enhanced version
+                            View and compare your original prompt with the enhanced version
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-6 mt-4">
-                        {/* Original Prompt */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
-                                    <User className="w-5 h-5 text-orange-500" />
-                                    Original Prompt
-                                </h3>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleCopy(selectedPrompt?.original_prompt || "")}
-                                    className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                                >
-                                    <Copy className="w-4 h-4 mr-2" />
-                                    Copy
-                                </Button>
+                    <div className="flex-1 overflow-y-auto p-6 pt-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Original Prompt */}
+                            <div className="flex flex-col space-y-3">
+                                <div className="flex items-center justify-between shrink-0">
+                                    <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
+                                        <User className="w-5 h-5 text-orange-500" />
+                                        Original Prompt
+                                    </h3>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleCopy(selectedPrompt?.original_prompt || "")}
+                                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
+                                    >
+                                        <Copy className="w-4 h-4 mr-2" />
+                                        Copy
+                                    </Button>
+                                </div>
+                                <div className="p-4 rounded-xl bg-zinc-950/50 border border-zinc-800">
+                                    <p className="text-zinc-300 whitespace-pre-wrap">
+                                        {selectedPrompt?.original_prompt || "No original prompt available"}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="p-4 rounded-xl bg-zinc-950/50 border border-zinc-800">
-                                <p className="text-zinc-300 whitespace-pre-wrap">
-                                    {selectedPrompt?.original_prompt || "No original prompt available"}
-                                </p>
+
+                            {/* Enhanced Prompt */}
+
+                            <div className="flex flex-col space-y-3">
+                                <div className="flex items-center justify-between shrink-0">
+                                    <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
+                                        <Sparkles className="w-5 h-5 text-orange-500" />
+                                        Enhanced Prompt
+                                    </h3>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleCopy(selectedPrompt?.prompt_value || "")}
+                                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
+                                    >
+                                        <Copy className="w-4 h-4 mr-2" />
+                                        Copy
+                                    </Button>
+                                </div>
+                                <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20">
+                                    <p className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                                        {selectedPrompt?.prompt_value || "No enhanced prompt available"}
+                                    </p>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Enhanced Prompt */}
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
-                                    <Sparkles className="w-5 h-5 text-orange-500" />
-                                    Enhanced Prompt
-                                </h3>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleCopy(selectedPrompt?.prompt_value || "")}
-                                    className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                                >
-                                    <Copy className="w-4 h-4 mr-2" />
-                                    Copy
-                                </Button>
-                            </div>
-                            <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20">
-                                <p className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                                    {selectedPrompt?.prompt_value || "No enhanced prompt available"}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Metadata */}
-                        <div className="pt-4 border-t border-zinc-800 flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-4 text-zinc-500">
+                    {/* Metadata Footer */}
+                    <div className="p-6 pt-2 shrink-0 border-t border-zinc-800/50">
+                        <div className="flex items-center justify-between text-sm text-zinc-500 mt-2">
+                            <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-4 h-4" />
                                     {selectedPrompt?.created_at && format(new Date(selectedPrompt.created_at), 'MMM d, yyyy')}
