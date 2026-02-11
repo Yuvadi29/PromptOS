@@ -4,7 +4,7 @@ import HowItWorks from '@/components/landing/how-it-works';
 import CTASection from '@/components/landing/cta-section';
 import Footer from '@/components/landing/footer';
 import Phases from '@/components/Phases';
-import LatestBlogs from '@/components/landing/latest-blogs';
+import ClientShell from '@/components/ui/client-shell';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -14,14 +14,20 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <HeroSection />
-      <FeaturesSection />
-      <Phases />
-      <HowItWorks />
-      <LatestBlogs />
-      <CTASection />
-      <Footer />
+    <div className="min-h-screen bg-zinc-950 text-white overflow-x-hidden">
+      <ClientShell>
+        <HeroSection />
+
+        <FeaturesSection />
+
+        <Phases />
+
+        <HowItWorks />
+
+        <CTASection />
+
+        <Footer />
+      </ClientShell>
     </div>
   );
 }
