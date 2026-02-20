@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Sparkles, Target, BarChart3, Wand2, Shield, Layers } from 'lucide-react';
+import Image from 'next/image';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -103,7 +104,7 @@ export default function FeaturesSection() {
                         <div className="relative w-full max-w-[90vw] md:max-w-6xl h-[85vh] rounded-[2rem] overflow-hidden border border-white/5 bg-zinc-900 shadow-2xl overflow-hidden">
                             {/* Image Background */}
                             <div className="absolute inset-0">
-                                <img
+                                <Image
                                     src={feature.image}
                                     alt=""
                                     className="w-full h-full object-cover opacity-30 mix-blend-overlay grayscale hover:grayscale-0 transition-all duration-700"

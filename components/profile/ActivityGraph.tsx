@@ -157,7 +157,7 @@ export function ActivityGraph() {
                                 <div key={idx} className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 flex flex-col gap-1">
                                     <span className="font-semibold text-orange-400 capitalize">{act.action.replace(/_/g, " ")}</span>
                                     {act.metadata?.prompt && (
-                                        <p className="text-sm text-zinc-300 line-clamp-3 my-1">"{act.metadata.prompt}"</p>
+                                        <p className="text-sm text-zinc-300 line-clamp-3 my-1">&quot;{act.metadata.prompt}&quot;</p>
                                     )}
                                     <span className="text-xs text-zinc-500">{format(new Date(act.created_at), "h:mm a")}</span>
                                 </div>
