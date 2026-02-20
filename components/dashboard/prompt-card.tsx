@@ -20,54 +20,51 @@ export function PromptCard({ id, title, content, createdAt, onDelete, showAction
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="group relative overflow-hidden"
+            className="group relative rounded-2xl bg-zinc-900/40 border border-white/[0.04] hover:border-white/[0.1] backdrop-blur-sm transition-all duration-300 hover:bg-zinc-900/60 overflow-hidden"
         >
-            <div className="relative p-6 rounded-xl bg-gradient-to-b from-zinc-900 to-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all duration-300">
-                {/* Hover glow */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br from-purple-500 to-cyan-500" />
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 to-orange-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                <div className="relative space-y-3">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <h3 className="font-semibold text-white">{title}</h3>
-                        <div className="flex items-center gap-2 text-xs text-zinc-500">
-                            <Clock className="w-3 h-3" />
-                            {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
-                        </div>
+            <div className="relative z-10 p-5 space-y-3">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[15px] font-semibold text-zinc-200 group-hover:text-white transition-colors truncate">{title}</h3>
+                    <div className="flex items-center gap-1.5 text-xs text-zinc-600 shrink-0 ml-4">
+                        <Clock className="w-3 h-3" />
+                        {formatDistanceToNow(new Date(createdAt), { addSuffix: true })}
                     </div>
-
-                    {/* Content */}
-                    <p className="text-sm text-zinc-400 line-clamp-3">
-                        {content}
-                    </p>
-
-                    {/* Actions */}
-                    {showActions && (
-                        <div className="flex items-center gap-2 pt-2">
-                            <Link href={`/dashboard/prompt/${id}`}>
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                                >
-                                    <Eye className="w-4 h-4 mr-1" />
-                                    View
-                                </Button>
-                            </Link>
-                            {onDelete && (
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={onDelete}
-                                    className="bg-zinc-800/50 border-zinc-700 hover:bg-red-900/50 hover:border-red-700 text-white hover:text-red-400"
-                                >
-                                    <Trash2 className="w-4 h-4 mr-1" />
-                                    Delete
-                                </Button>
-                            )}
-                        </div>
-                    )}
                 </div>
+
+                {/* Content */}
+                <p className="text-sm text-zinc-500 line-clamp-2 leading-relaxed">
+                    {content}
+                </p>
+
+                {/* Actions */}
+                {showActions && (
+                    <div className="flex items-center gap-2 pt-1">
+                        <Link href={`/dashboard/prompt/${id}`}>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="bg-zinc-950/50 border-white/[0.06] hover:border-white/[0.12] hover:bg-zinc-800/50 text-zinc-400 hover:text-white text-xs h-8 rounded-lg transition-all"
+                            >
+                                <Eye className="w-3.5 h-3.5 mr-1.5" />
+                                View
+                            </Button>
+                        </Link>
+                        {onDelete && (
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={onDelete}
+                                className="bg-zinc-950/50 border-white/[0.06] hover:border-red-500/30 hover:bg-red-950/30 text-zinc-400 hover:text-red-400 text-xs h-8 rounded-lg transition-all"
+                            >
+                                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                                Delete
+                            </Button>
+                        )}
+                    </div>
+                )}
             </div>
         </motion.div>
     );

@@ -1,9 +1,10 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { updateUserStreak } from "@/lib/streaks";
 
 export async function POST(req: Request) {
     try {
-        const { userId, prompt, originalPrompt} = await req.json();
+        const { userId, prompt, originalPrompt } = await req.json();
 
         if (!userId || !prompt) {
             return NextResponse.json({
@@ -15,8 +16,11 @@ export async function POST(req: Request) {
         await supabaseAdmin.from("prompts").insert({
             created_by: userId,
             prompt_value: prompt,
-            original_prompt:originalPrompt
+            original_prompt: originalPrompt
         });
+
+        // Update streak
+        await updateUserStreak(userId);
 
         return NextResponse.json({
             message: 'Prompt Saved Successfully'

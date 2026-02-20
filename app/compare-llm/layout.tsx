@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Providers } from "@/lib/providers";
-import { SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { UserProvider } from "@/context/UserContext";
 import SideBar from "@/components/SideBar";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -37,20 +37,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : undefined;
 
   return (
-      <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <SidebarProvider>
-            <UserProvider user={user}>
-              <div className="flex h-screen w-screen">
-                <SideBar user={user} />
-                <main className="flex-1 overflow-y-auto">
-                  <Toaster position="top-right" richColors />
-                  {children}
-                </main>
-              </div>
-            </UserProvider>
-          </SidebarProvider>
-        </Providers>
-      </div>
+    <div className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <Providers>
+        <SidebarProvider>
+          <UserProvider user={user}>
+            <SideBar user={user} />
+            <SidebarInset className="bg-zinc-950 flex-1 h-screen overflow-y-auto">
+              <Toaster position="top-right" richColors />
+              {children}
+            </SidebarInset>
+          </UserProvider>
+        </SidebarProvider>
+      </Providers>
+    </div>
   );
 }

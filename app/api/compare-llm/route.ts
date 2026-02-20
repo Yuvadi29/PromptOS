@@ -11,6 +11,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Auth & Logging
+    try {
+      const { getServerSession } = await import("next-auth");
+      const { authOptions } = await import("@/lib/auth");
+      const session = await getServerSession(authOptions);
+
+      if (session?.user?.email) {
+        const { supabaseAdmin } = await import("@/lib/supabase");
+        const { data: u } = await supabaseAdmin.from('users').select('id').eq('email', session.user.email).single();
+        if (u) {
+          const { logActivityAndCalculateStreak } = await import("@/lib/streaks");
+          // Fire and forget
+          logActivityAndCalculateStreak(u.id, 'llm_compared', { prompt }).catch(console.error);
+        }
+      }
+    } catch (e) { console.error("Logging error", e); }
+
     const fineTunedPrompt = `You are an advanced AI assistant with a vast knowledge base, capable of providing precise, relevant, and insightful responses. Based on the following user input, generate a well-structured, clear, and accurate response.
 
 User Input:

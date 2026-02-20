@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { SidebarProvider } from '@/components/ui/sidebar'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Copy, ThumbsDownIcon, ThumbsUpIcon, Sparkles, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { useSession } from 'next-auth/react'
@@ -173,8 +173,8 @@ export default function PromptEnhancer() {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full items-center justify-center bg-zinc-950 p-6">
+    <>
+      <div className="flex min-h-screen w-full items-center justify-center bg-zinc-950 p-6 relative">
         <div className="w-full max-w-4xl space-y-8">
           {/* Header */}
           <motion.div
@@ -323,6 +323,6 @@ export default function PromptEnhancer() {
           </motion.div>
         </div>
       </div>
-    </SidebarProvider>
+    </>
   )
 }

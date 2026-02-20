@@ -2,360 +2,201 @@
 
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
-import { User, Mail, Calendar, Edit2, Settings, Activity, Star, Sparkles, Zap, ThumbsUp, ThumbsDown, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Mail, Calendar, Activity, Star, Sparkles, Zap, TrendingUp, BarChart3 } from "lucide-react";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useEffect, useState } from "react";
-import { supabaseAdmin } from "@/lib/supabase";
-import { toast } from "sonner";
-import { format } from "date-fns";
+import { useEffect, useState, Suspense } from "react";
+import dynamic from "next/dynamic";
+
+// Lazy-load heavy components to improve FCP/LCP
+const ActivityGraph = dynamic(() => import("@/components/profile/ActivityGraph").then(mod => ({ default: mod.ActivityGraph })), { ssr: false });
+const RechartsRadar = dynamic<{ data: { subject: string; A: number; fullMark: number }[] }>(() => import("@/components/profile/RadarChartSection"), { ssr: false });
+
+// ─── Stat Card ───────────────────────────────────────────────
+function StatBento({ label, value, icon: Icon, gradient, delay, description }: {
+    label: string; value: number | string; icon: any; gradient: string; delay: number; description: string;
+}) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="group relative rounded-[1.5rem] bg-zinc-900/50 border border-white/[0.06] backdrop-blur-md overflow-hidden hover:border-white/[0.12] transition-all duration-500"
+        >
+            <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
+            {/* Hover tooltip */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1.5 rounded-lg bg-zinc-800 border border-white/[0.08] text-[11px] text-zinc-300 whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:-translate-y-1 transition-all duration-300 pointer-events-none z-20 shadow-xl">
+                {description}
+            </div>
+            <div className="relative z-10 p-6 flex flex-col justify-between h-full min-h-[140px]">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold tracking-[0.15em] uppercase text-zinc-500 group-hover:text-zinc-300 transition-colors">{label}</span>
+                    <Icon className="w-5 h-5 text-zinc-600 group-hover:text-orange-400 transition-colors" />
+                </div>
+                <div className="text-4xl font-black tracking-tight text-white mt-auto">{value}</div>
+            </div>
+        </motion.div>
+    );
+}
 
 export default function ProfilePage() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const user = session?.user;
-    const [prompts, setPrompts] = useState<any[]>([]);
     const [stats, setStats] = useState({
         totalPrompts: 0,
         totalLikes: 0,
-        reputation: 0
+        reputation: 0,
+        activityBreakdown: [
+            { subject: 'Prompt Library', A: 0, fullMark: 100 },
+            { subject: 'Enhancement', A: 0, fullMark: 100 },
+            { subject: 'LLM Comparison', A: 0, fullMark: 100 },
+            { subject: 'Scoring', A: 0, fullMark: 100 }
+        ]
     });
     const [loading, setLoading] = useState(true);
-    const [selectedPrompt, setSelectedPrompt] = useState<any | null>(null);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!user?.email) return;
-
-            try {
-                // Get user ID
-                const { data: userData, error: userError } = await supabaseAdmin
-                    .from('users')
-                    .select('id, created_at')
-                    .eq('email', user.email)
-                    .single();
-
-                if (userError || !userData) {
-                    console.error("User fetch error:", userError);
-                    return;
+        if (status === 'loading') return; // Wait for session to resolve
+        if (status === 'unauthenticated' || !user?.email) {
+            setLoading(false);
+            return;
+        }
+        fetch('/api/user/profile-stats')
+            .then(res => res.json())
+            .then(data => {
+                if (data && !data.error) {
+                    setStats(data);
                 }
-
-                // Get User Prompts
-                const { data: promptsData, error: promptsError } = await supabaseAdmin
-                    .from('prompts')
-                    .select('*')
-                    .eq('created_by', userData?.id)
-                    .order('created_at', { ascending: false });
-
-                if (promptsError) {
-                    console.error("Prompts fetch error:", promptsError);
-                } else {
-                    console.log(promptsData)
-                    setPrompts(promptsData || []);
-                }
-
-                // Calculate Stats
-                const totalPrompts = promptsData?.length || 0;
-                const totalLikes = promptsData?.reduce((acc, curr) => acc + (curr.likes || 0), 0) || 0;
-                // Simple reputation calculation: (likes - dislikes) * 10 + prompts * 5
-                const totalDislikes = promptsData?.reduce((acc, curr) => acc + (curr.dislikes || 0), 0) || 0;
-                const reputation = Math.max(0, (totalLikes - totalDislikes) * 10 + totalPrompts * 5);
-
-                setStats({
-                    totalPrompts,
-                    totalLikes,
-                    reputation
-                });
-
-            } catch (error) {
-                console.error("Error fetching profile data:", error);
-                toast.error("Failed to load profile data");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [user?.email]);
-
-    const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success('Copied to Clipboard!!');
-    };
+            })
+            .catch(err => console.error('Failed to load profile stats:', err))
+            .finally(() => setLoading(false));
+    }, [status, user?.email]);
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white pb-20">
-            {/* Sidebar blur overlay */}
-            {selectedPrompt && (
-                <div
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                    style={{ marginLeft: '-280px' }}
-                />
-            )}
-            {/* Banner */}
-            <div className="h-64 w-full bg-gradient-to-r from-orange-600 via-amber-600 to-yellow-600 relative overflow-hidden">
-                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-zinc-950/80" />
+        <div className="min-h-screen bg-black text-white selection:bg-orange-500/30">
+            {/* Ambient light */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute -top-40 left-1/3 w-[600px] h-[600px] rounded-full bg-orange-600/[0.07] blur-[150px]" />
+                <div className="absolute -bottom-40 right-1/4 w-[500px] h-[500px] rounded-full bg-amber-500/[0.04] blur-[120px]" />
             </div>
 
-            <div className="container mx-auto px-4 -mt-32 relative z-10">
-                <div className="flex flex-col md:flex-row items-end gap-8 mb-8">
-                    {/* Avatar */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.5 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative"
-                    >
-                        <div className="h-40 w-40 rounded-full p-1 bg-zinc-950">
-                            <Avatar className="h-full w-full border-4 border-orange-500">
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">
+
+                {/* ── HERO IDENTITY ── */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.8 }}
+                    className="flex flex-col items-center text-center mb-20"
+                >
+                    <div className="relative mb-8">
+                        <div className="w-28 h-28 rounded-full p-[3px] bg-gradient-to-br from-orange-400 via-amber-500 to-orange-600">
+                            <Avatar className="w-full h-full rounded-full border-[3px] border-black">
                                 <AvatarImage src={user?.image || ""} alt={user?.name || ""} />
-                                <AvatarFallback className="text-4xl bg-zinc-900 text-orange-500">
+                                <AvatarFallback className="bg-zinc-900 text-orange-500 text-2xl font-bold">
                                     {user?.name?.charAt(0)}
                                 </AvatarFallback>
                             </Avatar>
                         </div>
-                        <div className="absolute bottom-2 right-2 p-2 bg-orange-500 rounded-full border-4 border-zinc-950">
-                            <Sparkles className="w-5 h-5 text-white fill-white" />
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-black border-2 border-zinc-800 flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-orange-400" />
                         </div>
+                    </div>
+
+                    <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter mb-4">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500">
+                            {user?.name}
+                        </span>
+                    </h1>
+
+                    <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-zinc-500">
+                        <span className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.06] bg-white/[0.02]">
+                            <Mail className="w-3.5 h-3.5" /> {user?.email}
+                        </span>
+                        <span className="flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.06] bg-white/[0.02]">
+                            <Calendar className="w-3.5 h-3.5" /> Joined Nov 2025
+                        </span>
+                    </div>
+                </motion.div>
+
+                {/* ── STATS BENTO GRID ── */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+                    <StatBento label="Prompts" value={stats.totalPrompts} icon={Zap} gradient="from-orange-500/10 to-transparent" delay={0.1} description="Total prompts you've created and added to the community library" />
+                    {/* <StatBento label="Upvotes" value={stats.totalLikes} icon={Star} gradient="from-amber-500/10 to-transparent" delay={0.2} description="Total upvotes received from the community on your prompts" /> */}
+                    {/* <StatBento label="Reputation" value={stats.reputation} icon={TrendingUp} gradient="from-orange-600/10 to-transparent" delay={0.3} description="Score based on upvotes, downvotes, and prompts created" /> */}
+                    <StatBento label="Actions" value={stats.activityBreakdown.reduce((a, b) => a + b.A, 0)} icon={Activity} gradient="from-yellow-500/10 to-transparent" delay={0.4} description="Lifetime actions: enhancements, comparisons, scores, and library adds" />
+                </div>
+
+                {/* ── RADAR + ACTIVITY ROW ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-16">
+                    {/* Radar */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.6 }}
+                        className="lg:col-span-2 rounded-[1.5rem] bg-zinc-900/50 border border-white/[0.06] backdrop-blur-md p-6 relative overflow-hidden"
+                    >
+                        <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-zinc-500 mb-4 flex items-center gap-2">
+                            <BarChart3 className="w-4 h-4" /> Contribution Breakdown
+                        </h3>
+                        <Suspense fallback={<div className="h-[280px] flex items-center justify-center text-zinc-600 text-sm animate-pulse">Loading chart…</div>}>
+                            <RechartsRadar data={stats.activityBreakdown} />
+                        </Suspense>
                     </motion.div>
 
-                    {/* Info */}
-                    <div className="flex-1 pb-4">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                        >
-                            <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
-                                {user?.name}
-                                {/* <Badge className="bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 border-orange-500/50">
-                                    Pro Member
-                                </Badge> */}
-                            </h1>
-                            <div className="flex flex-wrap items-center gap-6 text-zinc-400">
-                                <div className="flex items-center gap-2">
-                                    <Mail className="w-4 h-4" />
-                                    {user?.email}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" />
-                                    Joined November 2025
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-
-                    {/* Actions */}
-                    {/* <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="pb-4 flex gap-3"
+                    {/* Activity Graph */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6, duration: 0.6 }}
+                        className="lg:col-span-3 rounded-[1.5rem] bg-zinc-900/50 border border-white/[0.06] backdrop-blur-md overflow-hidden"
                     >
-                        <Button variant="outline" className="border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-white gap-2">
-                            <Settings className="w-4 h-4" />
-                            Settings
-                        </Button>
-                        <Button className="bg-orange-600 hover:bg-orange-500 text-white gap-2">
-                            <Edit2 className="w-4 h-4" />
-                            Edit Profile
-                        </Button>
-                    </motion.div> */}
+                        <ActivityGraph />
+                    </motion.div>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    {[
-                        { label: "Total Prompts", value: stats.totalPrompts, icon: Zap, color: "text-yellow-500" },
-                        { label: "Total Likes", value: stats.totalLikes, icon: Star, color: "text-orange-500" },
-                        { label: "Reputation", value: stats.reputation, icon: Activity, color: "text-red-500" },
-                    ].map((stat, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.3 + index * 0.1 }}
-                            className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800 backdrop-blur-sm"
-                        >
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-zinc-400">{stat.label}</span>
-                                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                {/* ── MY PROMPTS LINK ── */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7, duration: 0.5 }}
+                    className="mb-16"
+                >
+                    <Link href="/dashboard/all-prompts">
+                        <div className="group relative rounded-[1.5rem] bg-zinc-900/50 border border-white/[0.06] backdrop-blur-md p-8 cursor-pointer hover:border-white/[0.12] transition-all duration-500 overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                            <div className="relative z-10 flex items-center justify-between">
+                                <div className="flex items-center gap-5">
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/20 flex items-center justify-center group-hover:from-orange-500/30 transition-all">
+                                        <Zap className="w-5 h-5 text-orange-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-zinc-200 group-hover:text-white transition-colors">My Prompts</h3>
+                                        <p className="text-sm text-zinc-600">{stats.totalPrompts} prompt{stats.totalPrompts !== 1 ? 's' : ''} created · View all →</p>
+                                    </div>
+                                </div>
+                                <div className="text-zinc-600 group-hover:text-orange-400 group-hover:translate-x-1 transition-all">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                </div>
                             </div>
-                            <div className="text-3xl font-bold">{stat.value}</div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Content Tabs */}
-                <Tabs defaultValue="my-prompts" className="w-full">
-                    <TabsList className="w-full justify-start bg-zinc-900/50 border-b border-zinc-800 rounded-none h-auto p-0 mb-8">
-                        {["My Prompts", "Saved", "Activity", "Settings"].map((tab) => (
-                            <TabsTrigger
-                                key={tab}
-                                value={tab.toLowerCase().replace(" ", "-")}
-                                className="px-8 py-4 rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:rounded data-[state=active]:bg-transparent data-[state=active]:text-orange-500 text-zinc-400 hover:text-white transition-all"
-                            >
-                                {tab}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-
-                    <TabsContent value="my-prompts" className="mt-0">
-                        {loading ? (
-                            <div className="text-center py-20 text-zinc-500">Loading prompts...</div>
-                        ) : prompts.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {prompts?.map((prompt, i) => (
-                                    <motion.div
-                                        key={prompt?.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: i * 0.05 }}
-                                        onClick={() => setSelectedPrompt(prompt)}
-                                        className="group p-6 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-orange-500/50 transition-all cursor-pointer flex flex-col h-full"
-                                    >
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="p-2 rounded-lg bg-orange-500/10 text-orange-500">
-                                                <Zap className="w-5 h-5" />
-                                            </div>
-                                            {/* <Badge variant="outline" className="border-zinc-700 text-zinc-400">
-                                                {prompt.niche || "General"}
-                                            </Badge> */}
-                                        </div>
-                                        <h3 className="text-lg font-semibold mb-2 group-hover:text-orange-400 transition-colors line-clamp-1">
-                                            {prompt?.original_prompt || "Untitled Prompt"}
-                                        </h3>
-                                        <p className="text-zinc-400 text-sm mb-4 line-clamp-2 flex-1">
-                                            {prompt.prompt_description || prompt.promptText || "No description"}
-                                        </p>
-                                        <div className="flex items-center justify-between text-sm text-zinc-500 mt-auto pt-4 border-t border-zinc-800">
-                                            <span>{format(new Date(prompt.created_at), 'MMM d, yyyy')}</span>
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-1">
-                                                    <ThumbsUp className="w-3 h-3" />
-                                                    {prompt.likes || 0}
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-6 w-6 hover:text-orange-500"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleCopy(prompt.promptText);
-                                                    }}
-                                                >
-                                                    <Copy className="w-3 h-3" />
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-20 text-zinc-500">
-                                No prompts created yet. Start creating to see them here!
-                            </div>
-                        )}
-                    </TabsContent>
-
-                    <TabsContent value="saved">
-                        <div className="text-center py-20 text-zinc-500">
-                            No saved prompts yet.
                         </div>
-                    </TabsContent>
+                    </Link>
+                </motion.div>
 
-                    <TabsContent value="activity">
-                        <div className="text-center py-20 text-zinc-500">
-                            No recent activity.
-                        </div>
-                    </TabsContent>
-                </Tabs>
+                {/* ── ACTIVITY LOG (always visible) ── */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8, duration: 0.5 }}
+                >
+                    <h3 className="text-xs font-semibold tracking-[0.15em] uppercase text-zinc-500 mb-4 flex items-center gap-2">
+                        <Activity className="w-4 h-4" /> Activity Log
+                    </h3>
+                    <div className="rounded-[1.5rem] bg-zinc-900/50 border border-white/[0.06] backdrop-blur-md overflow-hidden">
+                        <ActivityGraph />
+                    </div>
+                </motion.div>
             </div>
-
-            {/* Prompt Detail Modal */}
-            <Dialog open={!!selectedPrompt} onOpenChange={(open) => !open && setSelectedPrompt(null)}>
-                <DialogContent className="max-w-[95vw] md:max-w-[85vw] lg:max-w-7xl h-[90vh] md:h-[80vh] flex flex-col bg-zinc-900 border-zinc-800 text-white p-0 overflow-hidden">
-                    <DialogHeader className="p-6 pb-2 shrink-0">
-                        <DialogTitle className="text-2xl font-bold text-orange-400 flex items-center gap-2">
-                            <Sparkles className="w-6 h-6" />
-                            Prompt Details
-                        </DialogTitle>
-                        <DialogDescription className="text-zinc-400">
-                            View and compare your original prompt with the enhanced version
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="flex-1 overflow-y-auto p-6 pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Original Prompt */}
-                            <div className="flex flex-col space-y-3">
-                                <div className="flex items-center justify-between shrink-0">
-                                    <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
-                                        <User className="w-5 h-5 text-orange-500" />
-                                        Original Prompt
-                                    </h3>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleCopy(selectedPrompt?.original_prompt || "")}
-                                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                                    >
-                                        <Copy className="w-4 h-4 mr-2" />
-                                        Copy
-                                    </Button>
-                                </div>
-                                <div className="p-4 rounded-xl bg-zinc-950/50 border border-zinc-800">
-                                    <p className="text-zinc-300 whitespace-pre-wrap">
-                                        {selectedPrompt?.original_prompt || "No original prompt available"}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Enhanced Prompt */}
-
-                            <div className="flex flex-col space-y-3">
-                                <div className="flex items-center justify-between shrink-0">
-                                    <h3 className="text-lg font-semibold text-zinc-200 flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-orange-500" />
-                                        Enhanced Prompt
-                                    </h3>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleCopy(selectedPrompt?.prompt_value || "")}
-                                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                                    >
-                                        <Copy className="w-4 h-4 mr-2" />
-                                        Copy
-                                    </Button>
-                                </div>
-                                <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500/5 to-amber-500/5 border border-orange-500/20">
-                                    <p className="text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                                        {selectedPrompt?.prompt_value || "No enhanced prompt available"}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Metadata Footer */}
-                    <div className="p-6 pt-2 shrink-0 border-t border-zinc-800/50">
-                        <div className="flex items-center justify-between text-sm text-zinc-500 mt-2">
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" />
-                                    {selectedPrompt?.created_at && format(new Date(selectedPrompt.created_at), 'MMM d, yyyy')}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <ThumbsUp className="w-4 h-4" />
-                                    {selectedPrompt?.likes || 0} likes
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

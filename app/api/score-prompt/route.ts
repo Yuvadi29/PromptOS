@@ -27,6 +27,9 @@ export async function POST(req: NextRequest) {
         if (u) {
           const { incrementUserStat } = await import("@/lib/user-stats");
           newBadges = await incrementUserStat(u.id, 'prompt_scores_viewed');
+
+          const { logActivityAndCalculateStreak } = await import("@/lib/streaks");
+          await logActivityAndCalculateStreak(u.id, 'prompt_scored', { prompt });
         }
       }
     } catch (e) { console.error("Stats error", e); }

@@ -17,6 +17,23 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: "Invalid prompt" }), { status: 400 });
   }
 
+  // Auth & Stats Logging
+  try {
+    const { getServerSession } = await import("next-auth");
+    const { authOptions } = await import("@/lib/auth");
+    const session = await getServerSession(authOptions);
+
+    if (session?.user?.email) {
+      const { supabaseAdmin } = await import("@/lib/supabase");
+      const { data: u } = await supabaseAdmin.from('users').select('id').eq('email', session.user.email).single();
+      if (u) {
+        const { logActivityAndCalculateStreak } = await import("@/lib/streaks");
+        // Fire and forget so we don't delay the stream
+        logActivityAndCalculateStreak(u.id, 'prompt_enhanced', { prompt }).catch(console.error);
+      }
+    }
+  } catch (e) { console.error("Stats error", e); }
+
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const systemPrompt = `

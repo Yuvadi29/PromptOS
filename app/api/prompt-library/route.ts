@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { logActivityAndCalculateStreak } from "@/lib/streaks";
 
 export async function POST(req: Request) {
     try {
@@ -19,6 +20,9 @@ export async function POST(req: Request) {
             promptText: promptText,
             niche: niche,
         });
+
+        // Update streak & log action
+        await logActivityAndCalculateStreak(userId, "prompt_library_added", { prompt: title });
 
         return NextResponse.json({
             message: 'Prompt Added to Library Saved Successfully'

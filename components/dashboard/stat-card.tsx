@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { LucideIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface StatCardProps {
     title: string;
@@ -16,50 +15,35 @@ interface StatCardProps {
     };
 }
 
-export function StatCard({ title, value, description, icon: Icon, gradient = 'from-purple-500 to-pink-500', trend }: StatCardProps) {
+export function StatCard({ title, value, description, icon: Icon, gradient = 'from-orange-500/10 to-transparent', trend }: StatCardProps) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="group relative overflow-hidden"
+            className="group relative rounded-[1.5rem] bg-zinc-900/50 border border-white/[0.06] backdrop-blur-md overflow-hidden hover:border-white/[0.12] transition-all duration-500"
         >
-            <div className="relative h-full p-6 rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-all duration-300">
-                {/* Hover gradient effect */}
-                <div className={cn(
-                    "absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 bg-gradient-to-br",
-                    gradient
-                )} />
+            <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-700`} />
 
-                {/* Icon */}
-                <div className={cn(
-                    "inline-flex p-3 rounded-xl bg-gradient-to-br mb-4",
-                    gradient
-                )}>
-                    <Icon className="w-5 h-5 text-white" />
+            <div className="relative z-10 p-6 flex flex-col justify-between h-full min-h-[140px]">
+                <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold tracking-[0.15em] uppercase text-zinc-500 group-hover:text-zinc-300 transition-colors">{title}</span>
+                    <Icon className="w-5 h-5 text-zinc-600 group-hover:text-orange-400 transition-colors" />
                 </div>
 
-                {/* Content */}
-                <div className="relative">
-                    <p className="text-sm font-medium text-zinc-400 mb-1">{title}</p>
-                    <h3 className="text-3xl font-bold text-white mb-2">{value}</h3>
+                <div>
+                    <h3 className="text-4xl font-black tracking-tight text-white mt-auto">{value}</h3>
                     {description && (
-                        <p className="text-xs text-zinc-500">{description}</p>
+                        <p className="text-xs text-zinc-600 mt-1">{description}</p>
                     )}
                     {trend && (
-                        <p className="text-xs text-zinc-500 mt-2">
-                            <span className={trend.value >= 0 ? 'text-green-400' : 'text-red-400'}>
+                        <p className="text-xs text-zinc-600 mt-1">
+                            <span className={trend.value >= 0 ? 'text-emerald-400' : 'text-red-400'}>
                                 {trend.value >= 0 ? '+' : ''}{trend.value}
                             </span>
                             {' '}{trend.label}
                         </p>
                     )}
                 </div>
-
-                {/* Bottom accent line */}
-                <div className={cn(
-                    "absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-                    gradient
-                )} />
             </div>
         </motion.div>
     );

@@ -35,9 +35,9 @@ export default function LLMComparison() {
   }, []);
 
   useEffect(() => {
-  const el = document.getElementById("comparison-output");
-  if (el) el.scrollTop = el.scrollHeight;
-}, [results]);
+    const el = document.getElementById("comparison-output");
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [results]);
 
 
   const handleModelChange = (index: number, value: string) => {
@@ -76,7 +76,6 @@ export default function LLMComparison() {
       };
 
       let currentModel: keyof typeof modelChunks | null = null;
-      let buffer = '';
 
       const updateResult = (modelKey: keyof typeof modelChunks, text: string) => {
         modelChunks[modelKey] += text;
@@ -88,20 +87,23 @@ export default function LLMComparison() {
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
 
-        // Detect model header
-        if (buffer.includes("--- Model 1")) currentModel = "model1";
-        else if (buffer.includes("--- Model 2")) currentModel = "model2";
-        else if (buffer.includes("--- Model 3")) currentModel = "model3";
-
-        // If current model is set, collect until next model header
-        if (currentModel && !chunk.includes("--- Model")) {
-          updateResult(currentModel, chunk);
+        // Detect model header. Enqueue from API is guaranteed to send this standalone.
+        if (chunk.includes("--- Model 1")) {
+          currentModel = "model1";
+          continue;
+        } else if (chunk.includes("--- Model 2")) {
+          currentModel = "model2";
+          continue;
+        } else if (chunk.includes("--- Model 3")) {
+          currentModel = "model3";
+          continue;
         }
 
-        // Optionally, trim buffer
-        if (buffer.length > 2000) buffer = buffer.slice(-500); // Keep only recent
+        // Collect chunk into current model state
+        if (currentModel) {
+          updateResult(currentModel, chunk);
+        }
       }
 
     } catch (err) {
@@ -160,7 +162,7 @@ export default function LLMComparison() {
           </form>
 
           <div id="comparison-output">
-            <ComparisonResults results={results} isLoading={isLoading} selectedModels={selectedModels}/>
+            <ComparisonResults results={results} isLoading={isLoading} selectedModels={selectedModels} />
           </div>
 
         </main>
