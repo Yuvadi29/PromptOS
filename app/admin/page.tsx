@@ -117,7 +117,7 @@ export default function AdminLogin() {
           >
             {/* Metric progress bars */}
             <div className="bg-black/20 border border-white/5 rounded-2xl p-5 space-y-4">
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest font-mono">// Infra Health</p>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest font-mono">Infra Health</p>
               {[
                 { label: "CPU Utilization", value: 68, color: "bg-orange-500" },
                 { label: "Memory Pressure", value: 42, color: "bg-blue-500" },
@@ -143,7 +143,7 @@ export default function AdminLogin() {
 
             {/* Scrolling security event ticker */}
             <div className="bg-black/20 border border-white/5 rounded-2xl p-4 overflow-hidden relative flex-1">
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest font-mono mb-3">// Security Audit Log</p>
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest font-mono mb-3">Security Audit Log</p>
               <div className="space-y-2">
                 {[
                   { time: "23:02:41", event: "Admin session heartbeat", ok: true },
@@ -373,7 +373,7 @@ export default function AdminLogin() {
           transition={{ delay: 1.0, duration: 0.6 }}
           className="relative z-10 border-t border-white/5 px-8 py-4 shrink-0 font-mono text-[10px] space-y-1.5 overflow-hidden"
         >
-          <p className="text-orange-500/50 uppercase tracking-widest font-bold mb-2">// Live Event Stream</p>
+          <p className="text-orange-500/50 uppercase tracking-widest font-bold mb-2">Live Event Stream</p>
           {[
             { ts: "22:59:41", msg: "auth.gateway  — TLS handshake complete", color: "text-emerald-500/50" },
             { ts: "22:59:39", msg: "session.store — JWT issued for node_01", color: "text-blue-500/50" },
