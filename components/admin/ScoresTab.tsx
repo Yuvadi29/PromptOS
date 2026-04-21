@@ -18,7 +18,12 @@ export default function ScoresTab() {
             });
     }, []);
 
-    if (loading) return <div className="text-gray-400 animate-pulse">Loading scores...</div>;
+    if (loading) return (
+      <Card className="p-6 bg-[#0F0F12] border-white/5 h-full min-h-[500px] flex items-center justify-center animate-pulse rounded-2xl shadow-2xl">
+         <div className="h-full w-full bg-white/5 rounded-xl border border-white/5"></div>
+      </Card>
+    );
+
     if (!data) return <div className="text-red-400">Failed to load scores</div>;
 
     const chartData = [
@@ -31,79 +36,98 @@ export default function ScoresTab() {
     ];
 
     return (
-        <div className="space-y-8">
-            <div className="grid md:grid-cols-2 gap-8">
-                {/* Detailed Stats */}
-                <div className="grid gap-4 grid-cols-2">
-                    <ScoreCard title="Clarity" value={data.averages.clarity} icon={Zap} color="violet" />
-                    <ScoreCard title="Specificity" value={data.averages.specificity} icon={Target} color="blue" />
-                    <ScoreCard title="Model Fit" value={data.averages.model_fit} icon={CheckCircle2} color="green" />
-                    <ScoreCard title="Structure" value={data.averages.structure} icon={Layout} color="orange" />
+        <Card className="bg-[#0F0F12] border-white/5 rounded-2xl shadow-2xl overflow-hidden flex flex-col xl:flex-row group relative h-full min-h-[500px]">
+            <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+            {/* Left Side: Radar/Radial & Stats */}
+            <div className="w-full xl:w-2/5 p-6 border-b xl:border-b-0 xl:border-r border-white/5 flex flex-col relative z-10 bg-black/20">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                        <Target className="h-5 w-5 text-cyan-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-400 leading-tight">
+                            Quality Engine
+                        </h2>
+                        <p className="text-xs text-gray-400 font-mono">Global Aggregate Scoring</p>
+                    </div>
                 </div>
 
-                {/* Chart */}
-                <Card className="p-6 bg-[#0F0F12] border-white/5 flex items-center justify-center">
-                    <div className="h-[300px] w-full">
+                <div className="flex-1 flex flex-col md:flex-row xl:flex-col items-center justify-center gap-6">
+                    <div className="h-[200px] w-[200px] shrink-0">
                         <ResponsiveContainer width="100%" height="100%">
-                            <RadialBarChart cx="50%" cy="50%" innerRadius="10%" outerRadius="80%" barSize={15} data={chartData}>
+                            <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="100%" barSize={8} data={chartData}>
                                 <RadialBar
-                                    label={{ position: 'insideStart', fill: '#fff' }}
                                     background
                                     dataKey="uv"
+                                    cornerRadius={10}
                                 />
-                                <Legend iconSize={10} layout="vertical" verticalAlign="middle" wrapperStyle={{ right: 0 }} />
-                                <Tooltip contentStyle={{ backgroundColor: '#111', border: 'none' }} />
+                                <Tooltip contentStyle={{ backgroundColor: 'rgba(17,17,17,0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} itemStyle={{color: '#fff'}} />
                             </RadialBarChart>
                         </ResponsiveContainer>
                     </div>
-                </Card>
+
+                    <div className="grid grid-cols-2 gap-3 w-full">
+                        <ScoreCard title="Clarity" value={data.averages.clarity} icon={Zap} color="violet" />
+                        <ScoreCard title="Model Fit" value={data.averages.model_fit} icon={CheckCircle2} color="emerald" />
+                        <ScoreCard title="Specificity" value={data.averages.specificity} icon={Target} color="cyan" />
+                        <ScoreCard title="Structure" value={data.averages.structure} icon={Layout} color="orange" />
+                    </div>
+                </div>
             </div>
 
-            {/* Recent Scores List */}
-            <div>
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-emerald-400" /> Recent Evaluations
-                </h3>
-                <div className="bg-[#0F0F12] border border-white/5 rounded-xl overflow-hidden">
-                    <div className="grid grid-cols-6 gap-4 p-4 text-xs font-medium text-gray-500 border-b border-white/5 uppercase tracking-wider">
-                        <div className="col-span-3">Prompt</div>
-                        <div>Clarity</div>
-                        <div>Model Fit</div>
-                        <div>Date</div>
+            {/* Right Side: Recent Scores List */}
+            <div className="w-full xl:w-3/5 p-0 flex flex-col relative z-10 bg-black/10">
+                <div className="p-4 border-b border-white/5 bg-black/40 backdrop-blur-md">
+                    <h3 className="text-[13px] font-bold text-gray-300 uppercase tracking-widest flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-cyan-400" /> Evaluation Stream
+                    </h3>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                    <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest border-b border-white/5 mb-1">
+                        <div className="col-span-6">Raw Prompt Input</div>
+                        <div className="col-span-2 text-center">Clarity</div>
+                        <div className="col-span-2 text-center">Fit</div>
+                        <div className="col-span-2 text-right">Timestamp</div>
                     </div>
                     {data.recentScores.map((score: any) => (
-                        <div key={score.id} className="grid grid-cols-6 gap-4 p-4 text-sm hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
-                            <div className="col-span-3 text-white truncate pr-4" title={score.prompt}>{score.prompt}</div>
-                            <div className="text-gray-300">{score.clarity}/100</div>
-                            <div className="text-gray-300">{score.model_fit}/100</div>
-                            <div className="text-gray-500 text-xs">{new Date(score.created_at).toLocaleDateString()}</div>
+                        <div key={score.id} className="grid grid-cols-12 gap-2 px-4 py-3 text-xs hover:bg-white/5 transition-colors border border-transparent hover:border-white/5 rounded-xl group/row">
+                            <div className="col-span-6 text-gray-300 truncate pr-4 group-hover/row:text-white transition-colors" title={score.prompt}>{score.prompt}</div>
+                            <div className="col-span-2 text-center font-mono">
+                                <span className={score.clarity > 80 ? "text-emerald-400" : "text-orange-400"}>{score.clarity}</span><span className="text-gray-600">/100</span>
+                            </div>
+                            <div className="col-span-2 text-center font-mono">
+                                <span className={score.model_fit > 80 ? "text-emerald-400" : "text-orange-400"}>{score.model_fit}</span><span className="text-gray-600">/100</span>
+                            </div>
+                            <div className="col-span-2 text-right text-gray-500 font-mono text-[10px] mt-0.5">{new Date(score.created_at).toLocaleDateString(undefined, {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}</div>
                         </div>
                     ))}
                 </div>
             </div>
-        </div>
+        </Card>
     );
 }
 
 function ScoreCard({ title, value, icon: Icon, color }: any) {
     const colors: any = {
-        violet: "text-violet-400 bg-violet-400/10",
-        blue: "text-blue-400 bg-blue-400/10",
-        green: "text-emerald-400 bg-emerald-400/10",
-        orange: "text-orange-400 bg-orange-400/10"
+        violet: "text-violet-400 bg-violet-400/10 border-violet-500/20",
+        emerald: "text-emerald-400 bg-emerald-400/10 border-emerald-500/20",
+        cyan: "text-cyan-400 bg-cyan-400/10 border-cyan-500/20",
+        orange: "text-orange-400 bg-orange-400/10 border-orange-500/20"
     };
 
     return (
-        <Card className="p-4 bg-[#0F0F12] border-white/5 flex flex-col justify-between hover:border-white/10 transition-colors">
-            <div className="flex justify-between items-start mb-2">
-                <span className="text-sm text-gray-400 font-medium">{title}</span>
-                <div className={`p-1.5 rounded-lg ${colors[color] || colors.blue}`}>
-                    <Icon className="h-4 w-4" />
+        <Card className={`p-3 bg-black/40 border border-white/5 flex flex-col justify-between hover:border-white/10 transition-colors shadow-inner rounded-xl`}>
+            <div className="flex justify-between items-start mb-1">
+                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{title}</span>
+                <div className={`p-1 rounded-md border ${colors[color] || colors.cyan}`}>
+                    <Icon className="h-3 w-3" />
                 </div>
             </div>
-            <div className="text-2xl font-bold text-white">
-                {typeof value === 'number' ? value.toFixed(1) : value}
-                <span className="text-xs text-gray-500 font-normal ml-1">/ 100</span>
+            <div className="text-lg font-black tracking-tight text-white mt-1">
+                {typeof value === 'number' ? value.toFixed(0) : value}
+                <span className="text-[9px] text-gray-500 font-normal ml-0.5 tracking-normal">/100</span>
             </div>
         </Card>
     );
