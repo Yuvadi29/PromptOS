@@ -9,26 +9,32 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/build-passing-brightgreen" />
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" />
   <img src="https://img.shields.io/badge/Next.js-15-black" />
-  <img src="https://img.shields.io/badge/Three.js-Visuals-orange" />
+  <img src="https://img.shields.io/badge/Three.js-Visuals-orange" />  
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/Yuvadi29/PromptOS" />
+  <img src="https://img.shields.io/github/forks/Yuvadi29/PromptOS" />
 </p>
 
 ---
 
 ## ⭐ Vision
 
-PromptOS is a centralized prompt intelligence system that understands, evolves, and adapts. Acting as a Prompt Operating System, it continuously improves using user feedback and reinforcement learning — with **Gemini 2.0 Flash** as the core engine.
+PromptOS is a centralized prompt intelligence system that understands, evolves, and adapts. Acting as a Prompt Operating System, it continuously improves using user feedback and reinforcement learning — with **Gemini 2.5 Flash** as the core engine.
 
 ---
 
 ## ✨ Features
 
 ### ⚡ Intelligence & Enhancement
-- **Auto-Enhancement**: Instantly rewrite vague prompts into structured, high-performing versions using Gemini 2.0.
+- **Auto-Enhancement**: Instantly rewrite vague prompts into structured, high-performing versions using Gemini 2.5.
 - **Prompt Scoring**: Get objective scores (0-10) on **Clarity**, **Specificity**, **Relevance**, and **Model Fit**.
-- **LLM Comparison**: Compare your original prompt against the enhanced version side-by-side.
+- **Test Playground**: Test your prompts with different LLMs and compare the results.
+- **Prompt Refinement**: Continuously improve prompts based on user feedback and performance metrics.
+
 
 ### 🛠️ Workflow & Management
 - **Version Control**: Every edit is saved. Rollback to any previous version of your prompt instantly.
@@ -51,7 +57,7 @@ PromptOS is a centralized prompt intelligence system that understands, evolves, 
 ## 🛠 Tech Stack
 
 - **Framework**: Next.js 15 (App Router) with TypeScript
-- **AI**: Google Gemini 2.0 Flash (via Google Generative AI SDK)
+- **AI**: Google Gemini 2.5 Flash (via Google Generative AI SDK)
 - **Database**: Supabase (PostgreSQL)
 - **UI**: Tailwind CSS, Shadcn/UI, Framer Motion
 

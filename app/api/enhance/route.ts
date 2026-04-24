@@ -11,7 +11,7 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function POST(req: NextRequest) {
-  const { prompt } = await req.json();
+  const { prompt, answers } = await req.json();
 
   if (!prompt || typeof prompt !== 'string') {
     return new Response(JSON.stringify({ error: "Invalid prompt" }), { status: 400 });
@@ -35,6 +35,20 @@ export async function POST(req: NextRequest) {
   } catch (e) { console.error("Stats error", e); }
 
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  // Build context section from Q&A answers if provided
+  let contextSection = '';
+  if (answers && Array.isArray(answers) && answers.length > 0) {
+    contextSection = `
+
+IMPORTANT ADDITIONAL CONTEXT FROM USER:
+The user was asked clarifying questions and provided the following answers. Use these answers heavily to tailor and enhance the prompt:
+
+${answers.map((a: { question: string; answer: string }, i: number) => `Q${i + 1}: ${a.question}\nA${i + 1}: ${a.answer}`).join('\n\n')}
+
+Use the above answers to deeply personalize the enhanced prompt — incorporate the target audience, tone, specificity, constraints, and output format the user specified.
+`;
+  }
 
   const systemPrompt = `
 You are a world-class expert in prompt engineering and linguistic refinement. Your role is to act as a master craftsman of prompts — someone who can interpret, understand, and enhance user-provided prompts to a superior, clearer, and more effective version.
@@ -62,7 +76,7 @@ Formatting Instructions:
 - Present ONLY the final enhanced prompt inside triple backticks (\`\`\`).
 - Do NOT include any explanations before or after.
 - The enhanced prompt must sound natural, precise, goal-driven, and professional.
-
+${contextSection}
 User Input Prompt: """${prompt}"""
 `;
 

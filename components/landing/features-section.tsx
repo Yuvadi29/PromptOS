@@ -108,6 +108,8 @@ export default function FeaturesSection() {
                                     src={feature.image}
                                     alt=""
                                     className="w-full h-full object-cover opacity-30 mix-blend-overlay grayscale hover:grayscale-0 transition-all duration-700"
+                                    width={100}
+                                    height={100}
                                 />
                                 <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-10 mix-blend-multiply`} />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
