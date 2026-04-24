@@ -53,61 +53,42 @@ export default function LLMComparison() {
     setIsLoading(true);
     setResults({ model1: null, model2: null, model3: null });
 
-    try {
-      const res = await fetch('/api/compare-llm', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt, models: selectedModels }),
-      });
+    const fetchModelStream = async (modelId: string, modelKey: "model1" | "model2" | "model3", isFirstModel: boolean) => {
+      if (!modelId) return;
+      try {
+        const res = await fetch('/api/compare-llm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, model: modelId, isFirstModel }),
+        });
 
-      if (!res.body) throw new Error("No response stream");
+        if (!res.body) throw new Error("No response stream");
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder("utf-8");
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let accumulatedText = "";
 
-      let currentText = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-      const modelChunks = {
-        model1: '',
-        model2: '',
-        model3: '',
-      };
-
-      let currentModel: keyof typeof modelChunks | null = null;
-
-      const updateResult = (modelKey: keyof typeof modelChunks, text: string) => {
-        modelChunks[modelKey] += text;
-        setResults((prev) => ({ ...prev, [modelKey]: modelChunks[modelKey] }));
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-
-        // Detect model header. Enqueue from API is guaranteed to send this standalone.
-        if (chunk.includes("--- Model 1")) {
-          currentModel = "model1";
-          continue;
-        } else if (chunk.includes("--- Model 2")) {
-          currentModel = "model2";
-          continue;
-        } else if (chunk.includes("--- Model 3")) {
-          currentModel = "model3";
-          continue;
+          const chunk = decoder.decode(value, { stream: true });
+          accumulatedText += chunk;
+          
+          setResults((prev) => ({ ...prev, [modelKey]: accumulatedText }));
         }
-
-        // Collect chunk into current model state
-        if (currentModel) {
-          updateResult(currentModel, chunk);
-        }
+      } catch (err) {
+        console.error(`Streaming API failed for ${modelKey}:`, err);
+        setResults((prev) => ({ ...prev, [modelKey]: (prev[modelKey] || "") + "\n\n[Error: Failed to fetch response]" }));
       }
+    };
 
-    } catch (err) {
-      console.error('Streaming API failed:', err);
+    try {
+      await Promise.allSettled([
+        fetchModelStream(selectedModels[0], "model1", true),
+        fetchModelStream(selectedModels[1], "model2", false),
+        fetchModelStream(selectedModels[2], "model3", false)
+      ]);
     } finally {
       setIsLoading(false);
     }

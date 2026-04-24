@@ -1,32 +1,33 @@
-
 import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, models } = await req.json();
+    const { prompt, model, isFirstModel } = await req.json();
 
-    if (!prompt || typeof prompt !== "string" || !Array.isArray(models) || models.length !== 3) {
+    if (!prompt || typeof prompt !== "string" || !model || typeof model !== "string") {
       return new Response(JSON.stringify({ error: "Invalid prompt or model selection" }), {
         status: 400,
       });
     }
 
-    // Auth & Logging
-    try {
-      const { getServerSession } = await import("next-auth");
-      const { authOptions } = await import("@/lib/auth");
-      const session = await getServerSession(authOptions);
+    // Auth & Logging (Only log once per parallel batch)
+    if (isFirstModel) {
+      try {
+        const { getServerSession } = await import("next-auth");
+        const { authOptions } = await import("@/lib/auth");
+        const session = await getServerSession(authOptions);
 
-      if (session?.user?.email) {
-        const { supabaseAdmin } = await import("@/lib/supabase");
-        const { data: u } = await supabaseAdmin.from('users').select('id').eq('email', session.user.email).single();
-        if (u) {
-          const { logActivityAndCalculateStreak } = await import("@/lib/streaks");
-          // Fire and forget
-          logActivityAndCalculateStreak(u.id, 'llm_compared', { prompt }).catch(console.error);
+        if (session?.user?.email) {
+          const { supabaseAdmin } = await import("@/lib/supabase");
+          const { data: u } = await supabaseAdmin.from('users').select('id').eq('email', session.user.email).single();
+          if (u) {
+            const { logActivityAndCalculateStreak } = await import("@/lib/streaks");
+            // Fire and forget
+            logActivityAndCalculateStreak(u.id, 'llm_compared', { prompt }).catch(console.error);
+          }
         }
-      }
-    } catch (e) { console.error("Logging error", e); }
+      } catch (e) { console.error("Logging error", e); }
+    }
 
     const fineTunedPrompt = `You are an advanced AI assistant with a vast knowledge base, capable of providing precise, relevant, and insightful responses. Based on the following user input, generate a well-structured, clear, and accurate response.
 
@@ -44,67 +45,69 @@ Instructions:
       async start(controller) {
         const encoder = new TextEncoder();
 
-        for (let i = 0; i < models.length; i++) {
-          const modelId = models[i];
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
+            "HTTP-Referer": "https://promptos.in",
+            "X-Title": "PromptOS",
+          },
+          body: JSON.stringify({
+            model: model,
+            stream: true,
+            messages: [
+              { role: "system", content: fineTunedPrompt },
+              { role: "user", content: prompt },
+            ],
+          }),
+        });
 
-          controller.enqueue(encoder.encode(`\n\n--- Model ${i + 1} (${modelId}) ---\n\n`));
+        if (!response.ok) {
+          const errText = await response.text();
+          console.error(`OpenRouter Error for model ${model}:`, response.status, errText);
+          controller.enqueue(encoder.encode(`[Error ${response.status}: Failed to get response from ${model}]\n${errText}\n\n`));
+          controller.close();
+          return;
+        }
 
-          const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENROUTER_API_KEY}`,
-              "HTTP-Referer": "https://promptos.in",
-              "X-Title": "PromptOS",
-            },
-            body: JSON.stringify({
-              model: modelId,
-              stream: true,
-              messages: [
-                { role: "system", content: fineTunedPrompt },
-                { role: "user", content: prompt },
-              ],
-            }),
-          });
+        if (!response.body) {
+          controller.enqueue(encoder.encode(`[Error getting response from ${model}]\n\n`));
+          controller.close();
+          return;
+        }
 
-          if (!response.body) {
-            controller.enqueue(encoder.encode(`[Error getting response from ${modelId}]\n\n`));
-            continue;
-          }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
 
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
+        let done = false;
 
-          let done = false;
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
 
-          while (!done) {
-            const { value, done: readerDone } = await reader.read();
-            done = readerDone;
+          if (value) {
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
 
-            if (value) {
-              const chunk = decoder.decode(value, { stream: true });
-              const lines = chunk.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("data: ")) {
+                const jsonStr = line.slice(6).trim();
 
-              for (const line of lines) {
-                if (line.startsWith("data: ")) {
-                  const jsonStr = line.slice(6).trim();
+                if (jsonStr === "[DONE]") continue;
 
-                  if (jsonStr === "[DONE]") continue;
-
-                  try {
-                    const parsed = JSON.parse(jsonStr);
-                    const content = parsed.choices?.[0]?.delta?.content;
-                    if (content) {
-                      controller.enqueue(encoder.encode(content));
-                    }
-                  } catch (err) {
-                    console.error("Invalid JSON chunk from model", err);
+                try {
+                  const parsed = JSON.parse(jsonStr);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  if (content) {
+                    controller.enqueue(encoder.encode(content));
                   }
+                } catch (err) {
+                  // Silent catch for partial chunks, very common in SSE
                 }
               }
             }
           }
-
         }
 
         controller.close();
