@@ -41,6 +41,23 @@ export default function PromptSessionPage() {
         const latest = versions[0];
         setCurrentVersion(latest);
         setEnhancedPrompt(latest.content);
+      } else {
+        // Fallback: If no versions exist yet, load the original prompt
+        const { data: originalPrompt } = await supabaseAdmin
+          .from("prompts")
+          .select("prompt_value")
+          .eq("id", id)
+          .single();
+
+        if (originalPrompt) {
+          setCurrentVersion({ 
+            version_number: 1, 
+            source: "Original Generation", 
+            content: originalPrompt.prompt_value, 
+            prompt_id: (Array.isArray(id) ? id[0] : id) as string
+          });
+          setEnhancedPrompt(originalPrompt.prompt_value);
+        }
       }
 
       setLoading(false);

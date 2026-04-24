@@ -17,6 +17,8 @@ export default function CompareModal({
   const [diff, setDiff] = useState<any[]>([]);
   const [compareContent, setCompareContent] = useState("");
   const [versionId, setVersionId] = useState<string | null>(null);
+  const [addedLines, setAddedLines] = useState(0);
+  const [removedLines, setRemovedLines] = useState(0);
 
   useEffect(() => {
     function handler(e: any) {
@@ -50,15 +52,26 @@ export default function CompareModal({
 
     setCompareContent(selectedContent);
 
-    // Compute diff
-    const computed = diffLines(currentVersionContent, selectedContent);
+    // Compute diff (OLD vs NEW)
+    const computed = diffLines(selectedContent, currentVersionContent);
     setDiff(computed);
+
+    let added = 0;
+    let removed = 0;
+    computed.forEach((part) => {
+      if (part.added) added += part.count || 0;
+      if (part.removed) removed += part.count || 0;
+    });
+    setAddedLines(added);
+    setRemovedLines(removed);
   }
 
   function close() {
     setOpen(false);
     setVersionId(null);
     setDiff([]);
+    setAddedLines(0);
+    setRemovedLines(0);
   }
 
   return (
@@ -85,14 +98,24 @@ export default function CompareModal({
           >
             {/* ───── Header ───── */}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-orange-400">
-                Compare with Version {versionId}
-              </h2>
+              <div className="flex items-center gap-6">
+                <h2 className="text-lg font-semibold text-orange-400">
+                  Compare with Version {versionId}
+                </h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-mono bg-[#1F3315] text-[#7CFF4F] px-2 py-1 rounded border border-[#3E662A]">
+                    +{addedLines} Lines Added
+                  </span>
+                  <span className="text-xs font-mono bg-[#3A0D0D] text-[#FF4F4F] px-2 py-1 rounded border border-[#7A1A1A]">
+                    -{removedLines} Lines Removed
+                  </span>
+                </div>
+              </div>
 
               <Button
                 onClick={close}
                 variant="ghost"
-                className="text-orange-400 hover:bg-orange-500/10"
+                className="text-orange-400 hover:bg-orange-500/10 cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -115,7 +138,7 @@ export default function CompareModal({
               {/* RIGHT: Diff Preview */}
               <div className="bg-[#131313] border border-[#2A2A2A] rounded-lg p-4 overflow-auto">
                 <h3 className="text-orange-300 mb-2 text-xs uppercase tracking-wider">
-                  Comparing Version
+                  Unified Diff Preview
                 </h3>
 
                 <pre className="whitespace-pre-wrap text-xs leading-relaxed">
