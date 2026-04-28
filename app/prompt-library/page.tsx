@@ -1,7 +1,7 @@
 "use client"
 
 import { ReactNode, useEffect, useState } from "react"
-import { Filter, Plus, ThumbsDown, ThumbsUp, Sparkles, Copy, TrendingUp } from "lucide-react"
+import { Filter, Plus, ThumbsDown, ThumbsUp, Sparkles, Copy, TrendingUp, Bookmark, BookmarkCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -39,6 +39,7 @@ export default function PromptLibrary() {
     const { data: session } = useSession();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [bookmarkedIds, setBookmarkedIds] = useState<Set<number>>(new Set());
 
     useEffect(() => {
         const fetchPrompts = async () => {
@@ -72,8 +73,21 @@ export default function PromptLibrary() {
             }
         };
 
+        const fetchBookmarks = async () => {
+            try {
+                const res = await fetch("/api/prompt-library/bookmark");
+                if (res.ok) {
+                    const ids: number[] = await res.json();
+                    setBookmarkedIds(new Set(ids));
+                }
+            } catch (err) {
+                console.error("Failed to fetch bookmarks", err);
+            }
+        };
+
         fetchPrompts();
-    }, []);
+        if (session?.user) fetchBookmarks();
+    }, [session?.user]);
 
     const [newPrompt, setNewPrompt] = useState({
         title: "",
@@ -168,6 +182,39 @@ export default function PromptLibrary() {
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text)
         toast.success('Copied to Clipboard!!')
+    }
+
+    const handleBookmark = async (promptId: number) => {
+        // Optimistic update
+        const wasBookmarked = bookmarkedIds.has(promptId);
+        setBookmarkedIds((prev) => {
+            const next = new Set(prev);
+            if (wasBookmarked) next.delete(promptId);
+            else next.add(promptId);
+            return next;
+        });
+
+        try {
+            const res = await fetch("/api/prompt-library/bookmark", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ promptId }),
+            });
+
+            if (!res.ok) throw new Error();
+
+            const data = await res.json();
+            toast.success(data.bookmarked ? "Prompt bookmarked!" : "Bookmark removed");
+        } catch {
+            // Revert on failure
+            setBookmarkedIds((prev) => {
+                const next = new Set(prev);
+                if (wasBookmarked) next.add(promptId);
+                else next.delete(promptId);
+                return next;
+            });
+            toast.error("Failed to update bookmark");
+        }
     }
 
     if (loading) {
@@ -421,15 +468,35 @@ export default function PromptLibrary() {
                                                 <span className="text-xs">{prompt?.dislikes}</span>
                                             </Button>
                                         </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleCopy(prompt?.promptText)}
-                                            className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white h-8 hover:text-orange-400 hover:border-orange-500/50"
-                                        >
-                                            <Copy className="h-3 w-3 mr-1" />
-                                            Copy
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleBookmark(prompt?.id)}
+                                                className={cn(
+                                                    "h-8 px-2 transition-colors cursor-pointer",
+                                                    bookmarkedIds.has(prompt?.id)
+                                                        ? "text-orange-400 hover:text-orange-300"
+                                                        : "text-zinc-400 hover:text-orange-400"
+                                                )}
+                                                title={bookmarkedIds.has(prompt?.id) ? "Remove bookmark" : "Bookmark this prompt"}
+                                            >
+                                                {bookmarkedIds.has(prompt?.id) ? (
+                                                    <BookmarkCheck className="h-4 w-4" />
+                                                ) : (
+                                                    <Bookmark className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleCopy(prompt?.promptText)}
+                                                className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white h-8 hover:text-orange-400 hover:border-orange-500/50"
+                                            >
+                                                <Copy className="h-3 w-3 mr-1" />
+                                                Copy
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
