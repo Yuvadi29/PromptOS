@@ -96,12 +96,16 @@ export default function AdminDashboard() {
               Back to Client
             </Button>
           </Link>
-          <Link href="/admin" passHref>
-            <Button variant="ghost" className="w-full justify-start text-rose-500/70 hover:text-rose-400 hover:bg-rose-500/10">
-              <LogOut className="mr-3 h-4 w-4" />
-              Terminate Session
-            </Button>
-          </Link>
+          <button
+            onClick={async () => {
+              await fetch("/api/admin/logout", { method: "POST" });
+              window.location.href = "/admin";
+            }}
+            className="w-full flex items-center justify-start text-rose-500/70 hover:text-rose-400 hover:bg-rose-500/10 px-4 py-2 rounded-md text-sm transition-colors"
+          >
+            <LogOut className="mr-3 h-4 w-4" />
+            Terminate Session
+          </button>
         </div>
       </aside>
 

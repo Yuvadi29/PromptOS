@@ -18,16 +18,25 @@ export default function AdminLogin() {
     router.prefetch("/admin/dashboard");
   }, [router]);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      if (userid === process.env.NEXT_PUBLIC_ADMIN_USER && password === process.env.NEXT_PUBLIC_ADMIN_PASS) {
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userid, password }),
+      });
+
+      if (res.ok) {
         router.push("/admin/dashboard");
       } else {
         setIsLoading(false);
         alert("Access Denied: Invalid credentials");
       }
-    }, 600);
+    } catch {
+      setIsLoading(false);
+      alert("Login failed. Please try again.");
+    }
   };
 
   return (
