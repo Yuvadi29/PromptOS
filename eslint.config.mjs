@@ -9,15 +9,28 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
+import typescriptEslint from "@typescript-eslint/eslint-plugin";
+import typescriptParser from "@typescript-eslint/parser";
+
 const eslintConfig = [
   ...compat.config({
     extends: ['next'],
-    rules: {
-      "next/core-web-vitals": 'off', 
-      "next/typescript": 'off',
-      '@typescript-eslint/no-unused-vars':'off'
-    }
   }),
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    plugins: {
+      "@typescript-eslint": typescriptEslint,
+    },
+    languageOptions: {
+      parser: typescriptParser,
+    },
+    rules: {
+      "next/core-web-vitals": 'off',
+      "next/typescript": 'off',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+    },
+  },
 ];
 
 export default eslintConfig;

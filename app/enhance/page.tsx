@@ -1,22 +1,32 @@
-'use client'
+'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Copy, ThumbsDownIcon, ThumbsUpIcon, Sparkles, Zap, ArrowRight, MessageCircleQuestion, SkipForward, CheckCircle2 } from 'lucide-react'
-import { toast } from 'sonner'
-import { useSession } from 'next-auth/react'
-import { supabaseAdmin } from '@/lib/supabase'
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Copy,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+  Sparkles,
+  Zap,
+  ArrowRight,
+  MessageCircleQuestion,
+  SkipForward,
+  CheckCircle2,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
+import { supabaseAdmin } from '@/lib/supabase';
 import ReactMarkdown from 'react-markdown';
-import { Button } from '@/components/ui/button'
-import { SiOpenai } from "react-icons/si";
-import { RiGeminiFill } from "react-icons/ri";
+import { Button } from '@/components/ui/button';
+import { SiOpenai } from 'react-icons/si';
+import { RiGeminiFill } from 'react-icons/ri';
 
 type Phase = 'input' | 'loading-questions' | 'questions' | 'enhancing' | 'result';
 
-interface QAPair {
-  question: string;
-  answer: string;
-}
+// interface QAPair {
+//   question: string;
+//   answer: string;
+// }
 
 const STATUS_MESSAGES = [
   { emoji: '🔍', text: 'Analysing your answers...' },
@@ -26,16 +36,23 @@ const STATUS_MESSAGES = [
 ];
 
 export default function PromptEnhancer() {
-  const [input1, setInput1] = useState('')
-  const [response, setResponse] = useState('')
-  const [phase, setPhase] = useState<Phase>('input')
-  const [questions, setQuestions] = useState<string[]>([])
-  const [answers, setAnswers] = useState<string[]>(['', '', '', '', ''])
-  const [statusIndex, setStatusIndex] = useState(0)
-  const input2Ref = useRef<HTMLTextAreaElement>(null)
+  const [response, setResponse] = useState('');
+  const [phase, setPhase] = useState<Phase>('input');
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [statusIndex, setStatusIndex] = useState(0);
+  const input2Ref = useRef<HTMLTextAreaElement>(null);
   const { data: session } = useSession();
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackState, setFeedbackState] = useState<null | 'like' | 'dislike'>(null);
+  const [formats, setFormats] = useState<{
+    raw?: string;
+    markdown?: string;
+    json?: any;
+  }>({});
+  const [activeTab, setActiveTab] = useState<'raw' | 'markdown' | 'json'>('raw');
+  const [, setPromptType] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState('');
+  const [answers, setAnswers] = useState<any[]>([]);
 
   // Cycle through status messages during enhancing phase
   useEffect(() => {
@@ -48,15 +65,15 @@ export default function PromptEnhancer() {
 
   // Generate questions from the user's prompt
   const handleGenerateQuestions = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input1.trim()) return;
+    e.preventDefault();
+    if (!prompt.trim()) return;
 
     setPhase('loading-questions');
 
     try {
       const res = await fetch('/api/enhance/questions', {
         method: 'POST',
-        body: JSON.stringify({ prompt: input1 }),
+        body: JSON.stringify({ prompt: prompt }),
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -70,62 +87,76 @@ export default function PromptEnhancer() {
       console.error('Error generating questions:', error);
       toast.error('Failed to generate questions. Enhancing directly...');
       // Fallback: enhance directly without questions
-      handleEnhancePrompt([]);
+      handleEnhancePrompt();
     }
-  }
+  };
 
-  // Enhance the prompt with or without answers
-  const handleEnhancePrompt = useCallback(async (qaAnswers: QAPair[]) => {
-    setResponse('')
-    setPhase('enhancing')
-    setStatusIndex(0)
-
-    const body: { prompt: string; answers?: QAPair[] } = { prompt: input1 };
-    if (qaAnswers.length > 0) {
-      body.answers = qaAnswers;
+  const handleEnhancePrompt = async () => {
+    if (!prompt || prompt.trim() === '') {
+      alert('Please enter a prompt first');
+      return;
     }
 
-    const res = await fetch('/api/enhance', {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-    })
+    const cleanedAnswers = answers.filter((a) => a.answer && a.answer.trim() !== '');
 
-    if (!res.body) return
+    try {
+      setPhase('enhancing');
+      const res = await fetch('/api/enhance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          answers: cleanedAnswers,
+        }),
+      });
 
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
+      const data = await res.json();
 
-    setPhase('result')
+      if (!res.ok) {
+        console.error(data);
+        alert(data.error || 'Enhance failed');
+        return;
+      }
+      setPhase('result');
+      setFormats(data.formats);
+      setPromptType(data.type);
 
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      const chunk = decoder.decode(value, { stream: true })
-      setResponse((prev) => prev + chunk.replace(/^data: /gm, ''))
+      // Smart default tab
+      if (data.type === 'image' || data.type === 'video' || data.type === 'data') {
+        setActiveTab('json');
+      } else if (data.type === 'content' || data.type === 'marketing') {
+        setActiveTab('markdown');
+      } else {
+        setActiveTab('raw');
+      }
+    } catch (err) {
+      console.error('Enhance error:', err);
+      alert('Something went wrong');
     }
-  }, [input1])
+  };
 
-  // Submit answers and enhance
   const handleSubmitAnswers = () => {
-    const qaPairs: QAPair[] = questions.map((q, i) => ({
-      question: q,
-      answer: answers[i] || '',
-    }));
-    handleEnhancePrompt(qaPairs);
-  }
+    // const qaPairs: QAPair[] = questions.map((q, i) => ({
+    //   question: q,
+    //   answer: answers[i] || '',
+    // }));
+
+    handleEnhancePrompt();
+  };
 
   // Skip questions and enhance directly
   const handleSkipQuestions = () => {
-    handleEnhancePrompt([]);
-  }
+    handleEnhancePrompt();
+  };
 
   useEffect(() => {
     if (input2Ref.current) {
-      input2Ref.current.style.height = "auto";
+      input2Ref.current.style.height = 'auto';
       input2Ref.current.style.height = `${input2Ref.current.scrollHeight}px`;
     }
-  }, [response])
+  }, [response]);
 
   useEffect(() => {
     if (response) {
@@ -155,14 +186,14 @@ export default function PromptEnhancer() {
             body: JSON.stringify({
               userId: userData?.id,
               prompt: response,
-              originalPrompt: input1
+              originalPrompt: prompt,
             }),
           });
 
           if (res.ok) {
             toast.success('Prompt Saved!!');
           } else {
-            toast.warning('Failed to Save Prompt')
+            toast.warning('Failed to Save Prompt');
           }
         } catch (error) {
           console.error('Error Saving the prompt: ', error);
@@ -174,18 +205,18 @@ export default function PromptEnhancer() {
       }, 5000);
 
       return () => {
-        clearTimeout(timer)
+        clearTimeout(timer);
         clearTimeout(feedbackTimer);
-      }
+      };
     }
-  }, [response, session, input1]);
+  }, [response, session, prompt]);
 
   const handleCopy = () => {
     if (response) {
-      navigator.clipboard.writeText(response)
-      toast.success('Copied to Clipboard!!')
+      navigator.clipboard.writeText(response);
+      toast.success('Copied to Clipboard!!');
     }
-  }
+  };
 
   const handlePositiveFeedback = async () => {
     try {
@@ -300,12 +331,13 @@ export default function PromptEnhancer() {
             {STATUS_MESSAGES.map((_, i) => (
               <div
                 key={i}
-                className={`w-2 h-2 rounded-full transition-all duration-500 ${i === statusIndex
+                className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                  i === statusIndex
                     ? 'bg-orange-400 scale-125'
                     : i < statusIndex
                       ? 'bg-orange-400/50'
                       : 'bg-zinc-700'
-                  }`}
+                }`}
               />
             ))}
           </div>
@@ -334,9 +366,11 @@ export default function PromptEnhancer() {
               </span>
             </h1>
             <p className="text-zinc-400">
-              {phase === 'input' && 'Transform your prompts into powerful, model-ready instructions'}
-              {phase === 'questions' && 'Answer these questions so we can craft the perfect prompt for you'}
-              {phase === 'result' && 'Here\'s your enhanced prompt'}
+              {phase === 'input' &&
+                'Transform your prompts into powerful, model-ready instructions'}
+              {phase === 'questions' &&
+                'Answer these questions so we can craft the perfect prompt for you'}
+              {phase === 'result' && "Here's your enhanced prompt"}
             </p>
           </motion.div>
 
@@ -347,20 +381,40 @@ export default function PromptEnhancer() {
               animate={{ opacity: 1 }}
               className="flex items-center justify-center gap-3"
             >
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${phase === 'input' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
-                }`}>
-                {phase !== 'input' ? <CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> : <span className="w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] flex items-center justify-center font-bold">1</span>}
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  phase === 'input'
+                    ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
+                }`}
+              >
+                {phase !== 'input' ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
+                ) : (
+                  <span className="w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] flex items-center justify-center font-bold">
+                    1
+                  </span>
+                )}
                 Enter Prompt
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${phase === 'questions' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
-                }`}>
-                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">2</span>
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  phase === 'questions'
+                    ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
+                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">
+                  2
+                </span>
                 Answer Questions
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-800/50 text-zinc-500 border border-zinc-700/50">
-                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">3</span>
+                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">
+                  3
+                </span>
                 Enhanced Prompt
               </div>
             </motion.div>
@@ -382,14 +436,14 @@ export default function PromptEnhancer() {
                     className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl p-4 text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:outline-none resize-none transition-all"
                     rows={4}
                     placeholder="Enter your prompt here..."
-                    value={input1}
-                    onChange={(e) => setInput1(e.target.value)}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
                   />
                 </div>
 
                 <Button
                   type="submit"
-                  disabled={!input1.trim()}
+                  disabled={!prompt.trim()}
                   className="w-full group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/50 hover:shadow-xl hover:shadow-orange-500/60"
                 >
                   <Zap className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
@@ -403,7 +457,9 @@ export default function PromptEnhancer() {
               <div className="space-y-5">
                 <div className="flex items-center gap-3 pb-2 border-b border-zinc-800">
                   <MessageCircleQuestion className="w-5 h-5 text-orange-400" />
-                  <h2 className="text-lg font-semibold text-zinc-200">Help us understand your needs</h2>
+                  <h2 className="text-lg font-semibold text-zinc-200">
+                    Help us understand your needs
+                  </h2>
                 </div>
 
                 {questions.map((question, index) => (
@@ -461,16 +517,54 @@ export default function PromptEnhancer() {
 
                 {!allAnswered && (
                   <p className="text-xs text-zinc-500 text-center">
-                    Answer all questions to generate the best possible prompt, or skip to enhance directly
+                    Answer all questions to generate the best possible prompt, or skip to enhance
+                    directly
                   </p>
                 )}
               </div>
             )}
 
+            <div className="flex gap-2 mb-4">
+              {formats.raw && (
+                <button
+                  onClick={() => setActiveTab('raw')}
+                  className={`px-3 py-1 rounded-md text-sm ${
+                    activeTab === 'raw' ? 'bg-orange-500 text-black' : 'bg-zinc-800 text-zinc-300'
+                  }`}
+                >
+                  Raw
+                </button>
+              )}
+
+              {formats.markdown && (
+                <button
+                  onClick={() => setActiveTab('markdown')}
+                  className={`px-3 py-1 rounded-md text-sm ${
+                    activeTab === 'markdown'
+                      ? 'bg-orange-500 text-black'
+                      : 'bg-zinc-800 text-zinc-300'
+                  }`}
+                >
+                  Markdown
+                </button>
+              )}
+
+              {formats.json && (
+                <button
+                  onClick={() => setActiveTab('json')}
+                  className={`px-3 py-1 rounded-md text-sm ${
+                    activeTab === 'json' ? 'bg-orange-500 text-black' : 'bg-zinc-800 text-zinc-300'
+                  }`}
+                >
+                  JSON
+                </button>
+              )}
+            </div>
             {/* ─── RESULT PHASE ─────────────────────────────────── */}
             {phase === 'result' && (
               <>
-                {response.slice(7) && (
+                {/* {response.slice(7) && ( */}
+                {formats.raw && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -488,6 +582,30 @@ export default function PromptEnhancer() {
                         Copy
                       </Button>
                     </div>
+                    <div className="relative bg-[#0B0F17] border border-[#1E2633] rounded-lg p-4 text-sm overflow-auto max-h-[400px]">
+                      <button
+                        onClick={() => {
+                          let text = '';
+
+                          if (activeTab === 'json') {
+                            text = JSON.stringify(formats.json, null, 2);
+                          } else {
+                            text = formats[activeTab] || '';
+                          }
+
+                          navigator.clipboard.writeText(text);
+                        }}
+                        className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-[#1A2230] hover:bg-[#2A3240]"
+                      >
+                        Copy
+                      </button>
+
+                      <pre className="whitespace-pre-wrap text-orange-200 text-xs">
+                        {activeTab === 'json'
+                          ? JSON.stringify(formats.json, null, 2)
+                          : formats[activeTab]}
+                      </pre>
+                    </div>
 
                     <div
                       ref={input2Ref as unknown as React.RefObject<HTMLDivElement>}
@@ -503,12 +621,12 @@ export default function PromptEnhancer() {
                         size="sm"
                         onClick={() => {
                           handleCopy();
-                          toast.success("Prompt copied! Opening ChatGPT...");
-                          window.open("https://chat.openai.com/chat", "_blank");
+                          toast.success('Prompt copied! Opening ChatGPT...');
+                          window.open('https://chat.openai.com/chat', '_blank');
                         }}
                         className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
                       >
-                        <SiOpenai className="mr-2" fill='#0BA37F' />
+                        <SiOpenai className="mr-2" fill="#0BA37F" />
                         Open in ChatGPT
                       </Button>
 
@@ -524,12 +642,16 @@ export default function PromptEnhancer() {
                         size="sm"
                         onClick={() => {
                           handleCopy();
-                          toast.success("Prompt copied! Opening Gemini...");
-                          window.open("https://gemini.google.com/app", "_blank");
+                          toast.success('Prompt copied! Opening Gemini...');
+                          window.open('https://gemini.google.com/app', '_blank');
                         }}
                         className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
                       >
-                        <RiGeminiFill className="mr-2" style={{ fill: "url(#gemini-gradient)" }} size={18} />
+                        <RiGeminiFill
+                          className="mr-2"
+                          style={{ fill: 'url(#gemini-gradient)' }}
+                          size={18}
+                        />
                         Open in Gemini
                       </Button>
                     </div>
@@ -541,7 +663,7 @@ export default function PromptEnhancer() {
                         size="sm"
                         onClick={() => {
                           setPhase('input');
-                          setInput1('');
+                          setPrompt('');
                           setResponse('');
                           setQuestions([]);
                           setAnswers(['', '', '', '', '']);
@@ -571,13 +693,13 @@ export default function PromptEnhancer() {
                       <div className="flex gap-6">
                         <ThumbsUpIcon
                           size={30}
-                          className={`${feedbackState === 'like' ? "text-green-400" : "text-zinc-500"} hover:text-green-400 hover:scale-110 transition cursor-pointer`}
+                          className={`${feedbackState === 'like' ? 'text-green-400' : 'text-zinc-500'} hover:text-green-400 hover:scale-110 transition cursor-pointer`}
                           onClick={handlePositiveFeedback}
                           fill={feedbackState === 'like' ? 'currentColor' : 'none'}
                         />
                         <ThumbsDownIcon
                           size={30}
-                          className={`${feedbackState === 'dislike' ? "text-red-400" : "text-zinc-500"} hover:text-red-400 hover:scale-110 transition cursor-pointer`}
+                          className={`${feedbackState === 'dislike' ? 'text-red-400' : 'text-zinc-500'} hover:text-red-400 hover:scale-110 transition cursor-pointer`}
                           onClick={handleNegativeFeedback}
                           fill={feedbackState === 'dislike' ? 'currentColor' : 'none'}
                         />
@@ -591,5 +713,5 @@ export default function PromptEnhancer() {
         </div>
       </div>
     </>
-  )
+  );
 }

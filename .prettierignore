@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+coverage
+*.tsbuildinfo
+next-env.d.ts
+package-lock.json
+prod_dump.sql
+prod_dump_with_data.sql
+supabase/migrations
+.env*
