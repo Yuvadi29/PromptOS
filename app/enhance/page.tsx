@@ -115,8 +115,14 @@ export default function PromptEnhancer() {
       const data = await res.json();
 
       if (!res.ok) {
-        console.error(data);
-        alert(data.error || 'Enhance failed');
+        setPhase('input'); // Reset to input phase so they can try again
+        if (res.status === 400) {
+          toast.error(
+            'We are having huge traffic currently on the site, please try again after sometime'
+          );
+        } else {
+          toast.error(data.error || 'Enhance failed');
+        }
         return;
       }
       setPhase('result');
@@ -133,7 +139,8 @@ export default function PromptEnhancer() {
       }
     } catch (err) {
       console.error('Enhance error:', err);
-      alert('Something went wrong');
+      setPhase('input');
+      toast.error('Something went wrong');
     }
   };
 

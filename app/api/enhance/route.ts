@@ -112,15 +112,19 @@ User Input Prompt:
 """${prompt}"""
 `;
 
-  const result = await model.generateContent(systemPrompt + prompt);
+  try {
+    const result = await model.generateContent(systemPrompt + prompt);
+    const text = result.response.text().replace(/``` /g, '').trim();
 
-  const text = result.response.text().replace(/``` /g, '').trim();
+    // Build formats
+    const formats = buildFormats(text, classification.type);
 
-  // Build formats
-  const formats = buildFormats(text, classification.type);
-
-  return NextResponse.json({
-    type: classification.type,
-    formats,
-  });
+    return NextResponse.json({
+      type: classification.type,
+      formats,
+    });
+  } catch (error: any) {
+    console.error('Gemini API Error:', error);
+    return NextResponse.json({ error: 'API Error', message: error.message }, { status: 400 });
+  }
 }
