@@ -1,142 +1,274 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Sparkles, Target, BarChart3, Wand2, Shield, Layers } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
-gsap.registerPlugin(ScrollTrigger);
-
 const features = [
-    {
-        icon: Sparkles,
-        title: 'Enhance',
-        description: 'AI-driven prompt optimization engine.',
-        image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80',
-        color: 'from-orange-600 to-amber-600',
-    },
-    {
-        icon: BarChart3,
-        title: 'Compare',
-        description: 'Benchmark models side-by-side (GPT-4, Claude, Llama).',
-        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80',
-        color: 'from-violet-600 to-purple-600',
-    },
-    {
-        icon: Target,
-        title: 'Evaluate',
-        description: 'Real-time quality scoring & cost analysis.',
-        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80',
-        color: 'from-rose-600 to-orange-600',
-    },
-    {
-        icon: Layers,
-        title: 'Manage',
-        description: 'Version-controlled prompt library & API.',
-        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80',
-        color: 'from-blue-600 to-cyan-600',
-    }
+  {
+    number: '01',
+    title: 'Intelligent Enhancement',
+    description:
+      'Transform raw intent into highly structured, production-grade prompts using advanced models like Gemini 2.5 Flash.',
+    stats: { value: '65%', label: 'token compression' },
+  },
+  {
+    number: '02',
+    title: 'Real-time Cost Analysis',
+    description:
+      'Instantly compare token usage and execution costs across major providers including OpenAI, Anthropic, and Meta.',
+    stats: { value: '$0.42', label: 'saved per 1M tokens' },
+  },
+  {
+    number: '03',
+    title: 'Community Library',
+    description:
+      'Access, share, and rate fine-tuned prompt templates tailored for diverse domains like coding and marketing.',
+    stats: { value: 'Curated', label: 'production templates' },
+  },
+  {
+    number: '04',
+    title: 'Adaptive Learning',
+    description:
+      'The system continuously evolves through user feedback and reinforcement learning to personalize your outputs.',
+    stats: { value: 'RLHF', label: 'driven refinement' },
+  },
 ];
 
+// Floating dot particles visualization
+function ParticleVisualization() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameRef = useRef(0);
+  const mouseRef = useRef({ x: 0.5, y: 0.5 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = {
+        x: (e.clientX - rect.left) / rect.width,
+        y: (e.clientY - rect.top) / rect.height,
+      };
+    };
+    canvas.addEventListener('mousemove', handleMouseMove);
+
+    // Generate stable particle positions
+    const COUNT = 70;
+    const particles = Array.from({ length: COUNT }, (_, i) => {
+      const seed = i * 1.618;
+      return {
+        bx: (seed * 127.1) % 1,
+        by: (seed * 311.7) % 1,
+        phase: seed * Math.PI * 2,
+        speed: 0.4 + (seed % 0.4),
+        radius: 1.2 + (seed % 2.2),
+      };
+    });
+
+    let time = 0;
+    const render = () => {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+
+      particles.forEach((p) => {
+        const flowX = Math.sin(time * p.speed * 0.4 + p.phase) * 38;
+        const flowY = Math.cos(time * p.speed * 0.3 + p.phase * 0.7) * 24;
+
+        const bx = p.bx * w;
+        const by = p.by * h;
+        const dx = p.bx - mx;
+        const dy = p.by - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const influence = Math.max(0, 1 - dist * 2.8);
+
+        const x = bx + flowX + influence * Math.cos(time + p.phase) * 36;
+        const y = by + flowY + influence * Math.sin(time + p.phase) * 36;
+
+        const pulse = Math.sin(time * p.speed + p.phase) * 0.5 + 0.5;
+        const alpha = 0.08 + pulse * 0.18 + influence * 0.3;
+
+        ctx.beginPath();
+        ctx.arc(x, y, p.radius + pulse * 0.8, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.fill();
+      });
+
+      time += 0.016;
+      frameRef.current = requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(frameRef.current);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 pointer-events-auto"
+      style={{ width: '100%', height: '100%' }}
+    />
+  );
+}
+
 export default function FeaturesSection() {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const cardsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const [isVisible, setIsVisible] = useState(false);
+  const [activeFeature, setActiveFeature] = useState(0);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const cards = cardsRef.current.filter(Boolean);
-
-        // Pin the container
-        const ctx = gsap.context(() => {
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: container,
-                    start: 'top top',
-                    end: `+=${cards.length * 100}%`,
-                    pin: true,
-                    scrub: true,
-                }
-            });
-
-            // Set initial state for valid cards (skip first)
-            cards.forEach((card, i) => {
-                if (i > 0) {
-                    gsap.set(card, { y: '100%', scale: 0.9 + i * 0.02, zIndex: i });
-                }
-            });
-
-            cards.forEach((card, i) => {
-                if (i === 0) return;
-
-                tl.to(card, {
-                    y: '0%',
-                    scale: 1,
-                    zIndex: i,
-                    ease: 'none',
-                    duration: 1
-                });
-            });
-        }, container);
-
-        return () => ctx.revert();
-    }, []);
-
-    return (
-        <section ref={containerRef} id="features" className="relative h-screen bg-black overflow-hidden">
-            {/* Background - fixed */}
-            <div className="absolute inset-0 bg-neutral-950">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-orange-900/10 via-transparent to-transparent" />
-            </div>
-
-            {/* Cards Container */}
-            <div className="relative h-full w-full flex items-center justify-center">
-                {features.map((feature, i) => (
-                    <div
-                        key={i}
-                        ref={(el) => { cardsRef.current[i] = el; }}
-                        className="absolute inset-0 w-full h-full flex items-center justify-center p-6"
-                        style={{ zIndex: i }}
-                    >
-                        {/* The Card */}
-                        <div className="relative w-full max-w-[90vw] md:max-w-6xl h-[85vh] rounded-[2rem] overflow-hidden border border-white/5 bg-zinc-900 shadow-2xl overflow-hidden">
-                            {/* Image Background */}
-                            <div className="absolute inset-0">
-                                <Image
-                                    src={feature.image}
-                                    alt=""
-                                    className="w-full h-full object-cover opacity-30 mix-blend-overlay grayscale hover:grayscale-0 transition-all duration-700"
-                                    width={100}
-                                    height={100}
-                                />
-                                <div className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-10 mix-blend-multiply`} />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                            </div>
-
-                            {/* Content */}
-                            <div className="relative h-full flex flex-col justify-end p-8 md:p-16">
-                                <div className="mb-auto flex justify-between items-start">
-                                    <span className="text-[10rem] leading-none font-bold text-white/5 select-none font-geist-mono">
-                                        0{i + 1}
-                                    </span>
-                                    <div className="p-4 rounded-full bg-white/5 backdrop-blur-sm border border-white/10">
-                                        <feature.icon className="w-8 h-8 text-white" />
-                                    </div>
-                                </div>
-
-                                <h2 className="text-[8vw] leading-[0.9] font-bold tracking-tighter text-white mb-4">
-                                    {feature.title}
-                                </h2>
-                                <p className="text-xl md:text-2xl text-zinc-400 max-w-xl font-light">
-                                    {feature.description}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </section>
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setIsVisible(true);
+      },
+      { threshold: 0.1 }
     );
+
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveFeature((prev) => (prev + 1) % features.length);
+    }, 6000); // cycle every 6 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <section id="features" ref={sectionRef} className="relative py-24 lg:py-32 overflow-hidden">
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
+        {/* Header - Full width with diagonal layout */}
+        <div className="relative mb-24 lg:mb-32">
+          <div className="grid lg:grid-cols-12 gap-8 items-end">
+            <div className="lg:col-span-7">
+              <span className="inline-flex items-center gap-3 text-sm font-mono text-muted-foreground mb-6">
+                <span className="w-12 h-px bg-foreground/30" />
+                Capabilities
+              </span>
+              <h2
+                className={`text-6xl md:text-7xl lg:text-[128px] font-display tracking-tight leading-[0.9] transition-all duration-1000 ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+              >
+                Intelligent
+                <br />
+                <span className="text-muted-foreground">Prompts</span>
+              </h2>
+            </div>
+            <div className="lg:col-span-5 lg:pb-4">
+              <p
+                className={`text-xl text-muted-foreground leading-relaxed transition-all duration-1000 delay-200 ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                }`}
+              >
+                AI-driven prompt optimization engine
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bento Grid Layout */}
+        <div className="grid lg:grid-cols-12 gap-4 lg:gap-6">
+          {/* Large feature card */}
+          <div
+            className={`lg:col-span-12 relative bg-black border border-foreground/10 min-h-[500px] overflow-hidden group transition-all duration-700 flex ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+            }`}
+            onMouseEnter={() => setActiveFeature(0)}
+          >
+            <div className="relative flex-1 p-8 lg:p-12 bg-black flex flex-col justify-between">
+              <ParticleVisualization />
+              <div className="relative z-10 h-[280px]">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeFeature}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <span className="font-mono text-sm text-[#eca8d6]">
+                      {features[activeFeature].number}
+                    </span>
+                    <h3 className="text-3xl lg:text-4xl font-display mt-4 mb-6 transition-transform duration-500">
+                      {features[activeFeature].title}
+                    </h3>
+                    <p className="text-lg text-muted-foreground leading-relaxed max-w-md mb-8 h-[80px]">
+                      {features[activeFeature].description}
+                    </p>
+                    <div>
+                      <span className="text-5xl lg:text-6xl font-display text-white">
+                        {features[activeFeature].stats.value}
+                      </span>
+                      <span className="block text-sm text-muted-foreground font-mono mt-2">
+                        {features[activeFeature].stats.label}
+                      </span>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation Indicators */}
+              <div className="relative z-10 flex items-center gap-4 mt-8">
+                {features.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveFeature(i)}
+                    className="group py-2 flex items-center justify-center cursor-pointer"
+                  >
+                    <div
+                      className={`h-1 transition-all duration-500 rounded-full ${
+                        activeFeature === i
+                          ? 'w-12 bg-[#eca8d6]'
+                          : 'w-4 bg-white/20 group-hover:bg-white/40'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: mirrored image, full height */}
+            <div className="hidden lg:block relative w-[42%] shrink-0 overflow-hidden">
+              <Image
+                src="/images/feature.png"
+                alt=""
+                aria-hidden="true"
+                width={500}
+                height={500}
+                className="absolute inset-0 w-full h-full object-cover object-center"
+                style={{ transform: 'scaleX(-1)' }}
+              />
+              {/* Fade left edge into black */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }

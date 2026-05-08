@@ -1,47 +1,44 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface ScoreBarProps {
-    label: string;
-    score: number;
-    maxScore?: number;
+  label: string;
+  score: number;
+  maxScore?: number;
 }
 
 export function ScoreBar({ label, score, maxScore = 10 }: ScoreBarProps) {
-    const percentage = (score / maxScore) * 100;
+  const percentage = (score / maxScore) * 100;
 
-    const getColor = (score: number) => {
-        if (score >= 8) return 'from-emerald-500 to-green-400';
-        if (score >= 5) return 'from-amber-500 to-orange-400';
-        return 'from-red-500 to-rose-400';
-    };
+  const getColor = (score: number) => {
+    if (score >= 8) return 'bg-white';
+    if (score >= 5) return 'bg-white/60';
+    return 'bg-white/30';
+  };
 
-    const getTextColor = (score: number) => {
-        if (score >= 8) return 'text-emerald-400';
-        if (score >= 5) return 'text-amber-400';
-        return 'text-red-400';
-    };
-
-    return (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold tracking-[0.1em] uppercase text-zinc-500 capitalize">
-                    {label.replace('_', ' ')}
-                </span>
-                <span className={cn("text-xs font-bold tabular-nums", getTextColor(score))}>
-                    {score}/{maxScore}
-                </span>
-            </div>
-            <div className="w-full h-1.5 bg-white/[0.04] rounded-full overflow-hidden">
-                <div
-                    className={cn(
-                        "h-full bg-gradient-to-r rounded-full transition-all duration-700 ease-out",
-                        getColor(score)
-                    )}
-                    style={{ width: `${percentage}%` }}
-                />
-            </div>
-        </div>
-    );
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-mono tracking-widest uppercase text-muted-foreground">
+          {label.replace('_', ' ')}
+        </span>
+        <span className="text-[10px] font-mono font-bold tabular-nums text-foreground">
+          {score.toFixed(1)} <span className="text-muted-foreground">/ {maxScore}</span>
+        </span>
+      </div>
+      <div className="w-full h-[3px] bg-foreground/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percentage}%` }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className={cn(
+            'h-full rounded-full transition-all duration-700 ease-out',
+            getColor(score)
+          )}
+        />
+      </div>
+    </div>
+  );
 }

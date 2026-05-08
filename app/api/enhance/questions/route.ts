@@ -1,12 +1,12 @@
-import { NextRequest } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextRequest } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export async function POST(req: NextRequest) {
   try {
     const { prompt } = await req.json();
 
-    if (!prompt || typeof prompt !== "string") {
-      return new Response(JSON.stringify({ error: "Invalid prompt" }), {
+    if (!prompt || typeof prompt !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid prompt' }), {
         status: 400,
       });
     }
@@ -14,14 +14,14 @@ export async function POST(req: NextRequest) {
     // Move API key check inside the handler to prevent serverless cold-start crashes
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      console.error("Missing Gemini API Key in environment variables.");
-      return new Response(JSON.stringify({ error: "API Key Configuration Error" }), {
+      console.error('Missing Gemini API Key in environment variables.');
+      return new Response(JSON.stringify({ error: 'API Key Configuration Error' }), {
         status: 500,
       });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
     const systemPrompt = `You are an expert prompt engineering assistant. A user wants to create/enhance a prompt and has provided an initial description of what they want.
 
@@ -48,42 +48,41 @@ User's prompt: """${prompt}"""`;
 
     // Parse the JSON array from the response safely
     const cleanText = text
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
       .trim();
 
     let questions;
     try {
       questions = JSON.parse(cleanText);
-    } catch (parseError) {
-      console.error("Failed to parse Gemini output as JSON:", text);
-      throw new Error("Invalid JSON from LLM");
+    } catch {
+      console.error('Failed to parse Gemini output as JSON:', text);
+      throw new Error('Invalid JSON from LLM');
     }
 
     if (!Array.isArray(questions) || questions.length !== 5) {
-      throw new Error("Invalid questions format returned by LLM");
+      throw new Error('Invalid questions format returned by LLM');
     }
 
     return new Response(JSON.stringify({ questions }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
-
   } catch (error) {
-    console.error("Error generating questions:", error);
-    
-    // FALLBACK: If Gemini API is rate-limited, down, or hallucinates bad JSON, 
+    console.error('Error generating questions:', error);
+
+    // FALLBACK: If Gemini API is rate-limited, down, or hallucinates bad JSON,
     // we return generic clarifying questions so the UI does not crash in production.
     const fallbackQuestions = [
-      "Who is the specific target audience or AI model for this prompt?",
-      "What tone and style should the output have (e.g., professional, casual, analytical)?",
-      "Are there any specific constraints, word limits, or things to avoid?",
-      "What format should the final output be in (e.g., bullet points, essay, code)?",
-      "What is the ultimate goal or key takeaway you want to achieve with this output?"
+      'Who is the specific target audience or AI model for this prompt?',
+      'What tone and style should the output have (e.g., professional, casual, analytical)?',
+      'Are there any specific constraints, word limits, or things to avoid?',
+      'What format should the final output be in (e.g., bullet points, essay, code)?',
+      'What is the ultimate goal or key takeaway you want to achieve with this output?',
     ];
 
     return new Response(JSON.stringify({ questions: fallbackQuestions }), {
-      headers: { "Content-Type": "application/json" },
-      status: 200 // Return 200 with fallback so the UI can proceed normally
+      headers: { 'Content-Type': 'application/json' },
+      status: 200, // Return 200 with fallback so the UI can proceed normally
     });
   }
 }

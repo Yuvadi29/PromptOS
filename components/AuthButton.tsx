@@ -1,39 +1,55 @@
-"use client";
+'use client';
 
-import { signIn, signOut, useSession } from "next-auth/react";
-import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
+import { signIn, signOut, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
-export function AuthButton() {
-    const { data: session } = useSession();
-    const router = useRouter();
+interface AuthButtonProps {
+  isScrolled?: boolean;
+}
 
-    const handleLogin = async () => {
-        // Use NextAuth's built-in redirect with callbackUrl
-        await signIn("google", { callbackUrl: '/dashboard' });
-    };
+export function AuthButton({ isScrolled }: AuthButtonProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
 
-    if (session) {
-        return (
-            <div className="flex items-center gap-4">
-                <Button
-                    onClick={() => router.push('/dashboard')}
-                    className="group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 text-white border-0 cursor-pointer"
-                >
-                    Go to Dashboard
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={() => signOut()}
-                    className="px-8 py-6 text-lg font-semibold border-border bg-card/50 hover:bg-card text-foreground backdrop-blur-sm cursor-pointer"
-                >
-                    Sign Out
-                </Button>
-            </div>
-        );
-    }
+  const handleLogin = async () => {
+    await signIn('google', { callbackUrl: '/dashboard' });
+  };
 
+  if (session) {
     return (
-        <Button onClick={handleLogin} className="cursor-pointer p-6 group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 text-white border-0">Get Started</Button>
-    )
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.push('/dashboard')}
+          className={`text-sm font-medium transition-colors duration-300 cursor-pointer ${
+            isScrolled
+              ? 'text-foreground/70 hover:text-foreground'
+              : 'text-white/70 hover:text-white'
+          }`}
+        >
+          Dashboard
+        </button>
+        <button
+          onClick={() => signOut()}
+          className={`text-[10px] px-3 py-1 rounded-full border transition-all duration-300 uppercase tracking-widest font-bold cursor-pointer ${
+            isScrolled
+              ? 'border-foreground/10 text-foreground/40 hover:border-foreground/20 hover:text-foreground/60'
+              : 'border-white/10 text-white/40 hover:border-white/20 hover:text-white/60'
+          }`}
+        >
+          Sign Out
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleLogin}
+      className={`text-sm font-medium transition-colors duration-300 cursor-pointer ${
+        isScrolled ? 'text-foreground/70 hover:text-foreground' : 'text-white/70 hover:text-white'
+      }`}
+    >
+      Sign In
+    </button>
+  );
 }

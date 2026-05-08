@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Copy,
   ThumbsDownIcon,
   ThumbsUpIcon,
   Sparkles,
-  Zap,
   ArrowRight,
   MessageCircleQuestion,
-  SkipForward,
-  CheckCircle2,
+  Cpu,
+  Activity,
+  Terminal,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
@@ -20,19 +20,16 @@ import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { SiOpenai } from 'react-icons/si';
 import { RiGeminiFill } from 'react-icons/ri';
+import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 type Phase = 'input' | 'loading-questions' | 'questions' | 'enhancing' | 'result';
 
-// interface QAPair {
-//   question: string;
-//   answer: string;
-// }
-
 const STATUS_MESSAGES = [
-  { emoji: '🔍', text: 'Analysing your answers...' },
-  { emoji: '🧠', text: 'Understanding the context...' },
-  { emoji: '✨', text: 'Curating the best prompt for you...' },
-  { emoji: '🚀', text: 'Almost there, polishing your prompt...' },
+  { emoji: '🔍', text: 'Analysing architectural patterns...' },
+  { emoji: '🧠', text: 'Synthesizing contextual layers...' },
+  { emoji: '✨', text: 'Optimizing linguistic density...' },
+  { emoji: '🚀', text: 'Committing to core repository...' },
 ];
 
 export default function PromptEnhancer() {
@@ -40,7 +37,6 @@ export default function PromptEnhancer() {
   const [phase, setPhase] = useState<Phase>('input');
   const [questions, setQuestions] = useState<string[]>([]);
   const [statusIndex, setStatusIndex] = useState(0);
-  const input2Ref = useRef<HTMLTextAreaElement>(null);
   const { data: session } = useSession();
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackState, setFeedbackState] = useState<null | 'like' | 'dislike'>(null);
@@ -54,7 +50,6 @@ export default function PromptEnhancer() {
   const [prompt, setPrompt] = useState('');
   const [answers, setAnswers] = useState<any[]>([]);
 
-  // Cycle through status messages during enhancing phase
   useEffect(() => {
     if (phase !== 'enhancing') return;
     const interval = setInterval(() => {
@@ -63,7 +58,6 @@ export default function PromptEnhancer() {
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Generate questions from the user's prompt
   const handleGenerateQuestions = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
@@ -86,7 +80,6 @@ export default function PromptEnhancer() {
     } catch (error) {
       console.error('Error generating questions:', error);
       toast.error('Failed to generate questions. Enhancing directly...');
-      // Fallback: enhance directly without questions
       handleEnhancePrompt();
     }
   };
@@ -97,7 +90,7 @@ export default function PromptEnhancer() {
       return;
     }
 
-    const cleanedAnswers = answers.filter((a) => a.answer && a.answer.trim() !== '');
+    const cleanedAnswers = answers.filter((a) => a && a.trim() !== '');
 
     try {
       setPhase('enhancing');
@@ -115,7 +108,7 @@ export default function PromptEnhancer() {
       const data = await res.json();
 
       if (!res.ok) {
-        setPhase('input'); // Reset to input phase so they can try again
+        setPhase('input');
         if (res.status === 400) {
           toast.error(
             'We are having huge traffic currently on the site, please try again after sometime'
@@ -128,8 +121,8 @@ export default function PromptEnhancer() {
       setPhase('result');
       setFormats(data.formats);
       setPromptType(data.type);
+      setResponse(data.formats.markdown || data.formats.raw || '');
 
-      // Smart default tab
       if (data.type === 'image' || data.type === 'video' || data.type === 'data') {
         setActiveTab('json');
       } else if (data.type === 'content' || data.type === 'marketing') {
@@ -145,34 +138,18 @@ export default function PromptEnhancer() {
   };
 
   const handleSubmitAnswers = () => {
-    // const qaPairs: QAPair[] = questions.map((q, i) => ({
-    //   question: q,
-    //   answer: answers[i] || '',
-    // }));
-
     handleEnhancePrompt();
   };
 
-  // Skip questions and enhance directly
   const handleSkipQuestions = () => {
     handleEnhancePrompt();
   };
 
   useEffect(() => {
-    if (input2Ref.current) {
-      input2Ref.current.style.height = 'auto';
-      input2Ref.current.style.height = `${input2Ref.current.scrollHeight}px`;
-    }
-  }, [response]);
-
-  useEffect(() => {
     if (response) {
       const timer = setTimeout(async () => {
         try {
-          if (!session?.user?.email) {
-            toast.info('User not authenticated');
-            return;
-          }
+          if (!session?.user?.email) return;
 
           const { data: userData, error } = await supabaseAdmin
             .from('users')
@@ -180,12 +157,9 @@ export default function PromptEnhancer() {
             .eq('email', session?.user?.email)
             .single();
 
-          if (error || !userData) {
-            console.error('Failed to fetch user ID from Supabase: ', error);
-            return;
-          }
+          if (error || !userData) return;
 
-          const res = await fetch('/api/save-prompt', {
+          await fetch('/api/save-prompt', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -196,12 +170,6 @@ export default function PromptEnhancer() {
               originalPrompt: prompt,
             }),
           });
-
-          if (res.ok) {
-            toast.success('Prompt Saved!!');
-          } else {
-            toast.warning('Failed to Save Prompt');
-          }
         } catch (error) {
           console.error('Error Saving the prompt: ', error);
         }
@@ -219,10 +187,14 @@ export default function PromptEnhancer() {
   }, [response, session, prompt]);
 
   const handleCopy = () => {
-    if (response) {
-      navigator.clipboard.writeText(response);
-      toast.success('Copied to Clipboard!!');
+    let text = '';
+    if (activeTab === 'json') {
+      text = JSON.stringify(formats.json, null, 2);
+    } else {
+      text = formats[activeTab] || response;
     }
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to Clipboard!!');
   };
 
   const handlePositiveFeedback = async () => {
@@ -238,19 +210,15 @@ export default function PromptEnhancer() {
 
       if (storeFeedback.ok) {
         toast.success('Thank you for your feedback!');
-      } else {
-        toast.error('Feedback can only be given once per prompt.');
       }
     } catch (error) {
       console.error('Error Storing Feedback: ', error);
-      toast.error('Something went wrong.');
     }
   };
 
   const handleNegativeFeedback = async () => {
     try {
       setFeedbackState('dislike');
-
       const storeFeedback = await fetch('/api/feedback', {
         method: 'POST',
         body: JSON.stringify({ response, feedback: false }),
@@ -261,464 +229,451 @@ export default function PromptEnhancer() {
 
       if (storeFeedback.ok) {
         toast.success('Thank you for your feedback!');
-      } else {
-        toast.error('Feedback can only be given once per prompt.');
       }
     } catch (error) {
       console.error('Error Storing Feedback: ', error);
-      toast.error('Something went wrong.');
     }
   };
 
-  const allAnswered = answers.every((a) => a.trim().length > 0);
-
-  // ─── LOADING QUESTIONS PHASE ──────────────────────────────────
-  if (phase === 'loading-questions') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-5"
-        >
-          <div className="relative w-20 h-20">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 opacity-20 animate-ping" />
-            <div className="absolute inset-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 opacity-30 animate-pulse" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <MessageCircleQuestion className="w-8 h-8 text-orange-400" />
-            </div>
-          </div>
-          <p className="text-zinc-300 text-lg font-medium animate-pulse">
-            Generating questions to understand your needs...
-          </p>
-          <p className="text-zinc-500 text-sm">This will help create a much better prompt</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // ─── ENHANCING PHASE ──────────────────────────────────────────
-  if (phase === 'enhancing') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <div className="flex flex-col items-center gap-6 max-w-md">
-          {/* Animated orb */}
-          <div className="relative w-24 h-24">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 opacity-20 animate-ping" />
-            <div className="absolute inset-1 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 opacity-30 animate-pulse" />
-            <motion.div
-              className="absolute inset-3 rounded-full bg-gradient-to-br from-orange-500 to-amber-500"
-              animate={{ scale: [1, 1.1, 1], rotate: [0, 180, 360] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-          </div>
-
-          {/* Cycling status messages */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={statusIndex}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="text-center space-y-2"
-            >
-              <p className="text-2xl">{STATUS_MESSAGES[statusIndex].emoji}</p>
-              <p className="text-lg font-medium text-zinc-200">
-                {STATUS_MESSAGES[statusIndex].text}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Progress dots */}
-          <div className="flex gap-2 mt-4">
-            {STATUS_MESSAGES.map((_, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-all duration-500 ${
-                  i === statusIndex
-                    ? 'bg-orange-400 scale-125'
-                    : i < statusIndex
-                      ? 'bg-orange-400/50'
-                      : 'bg-zinc-700'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const allAnswered = answers.every((a) => a && a.trim().length > 0);
 
   return (
-    <>
-      <div className="flex min-h-screen w-full items-center justify-center bg-zinc-950 p-6 relative">
-        <div className="w-full max-w-4xl space-y-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-2"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 mb-4">
-              <Sparkles className="w-4 h-4 text-orange-400" />
-              <span className="text-sm font-medium text-orange-300">AI-Powered Enhancement</span>
-            </div>
-            <h1 className="text-4xl font-bold">
-              <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-                Prompt Enhancer
-              </span>
-            </h1>
-            <p className="text-zinc-400">
-              {phase === 'input' &&
-                'Transform your prompts into powerful, model-ready instructions'}
-              {phase === 'questions' &&
-                'Answer these questions so we can craft the perfect prompt for you'}
-              {phase === 'result' && "Here's your enhanced prompt"}
-            </p>
-          </motion.div>
+    <div className="relative w-full min-h-screen bg-black overflow-x-hidden noise-overlay">
+      {/* Background elements */}
+      <div className="fixed inset-0 z-0">
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover opacity-20 transition-opacity duration-1000"
+        >
+          <source
+            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/bg-hero-0BnFGdr81Ifnj3WbBZoNt1KE4D5DMT.mp4"
+            type="video/mp4"
+          />
+        </video>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/80 to-black" />
+      </div>
 
-          {/* Step Indicator */}
-          {phase !== 'result' && (
+      {/* Subtle grid lines */}
+      <div className="fixed inset-0 z-[1] overflow-hidden pointer-events-none opacity-[0.03]">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={`h-${i}`}
+            className="absolute h-px bg-white"
+            style={{ top: `${(100 / 12) * (i + 1)}%`, left: 0, right: 0 }}
+          />
+        ))}
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={`v-${i}`}
+            className="absolute w-px bg-white"
+            style={{ left: `${(100 / 12) * (i + 1)}%`, top: 0, bottom: 0 }}
+          />
+        ))}
+      </div>
+
+      <main className="relative z-10 max-w-[1400px] mx-auto px-6 md:px-12 py-32 lg:py-40">
+        {/* Phase: Loading Questions */}
+        <AnimatePresence mode="wait">
+          {phase === 'loading-questions' && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center gap-3"
+              key="loading-questions"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="min-h-[400px] flex flex-col items-center justify-center gap-12"
             >
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  phase === 'input'
-                    ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
-                }`}
-              >
-                {phase !== 'input' ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                ) : (
-                  <span className="w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] flex items-center justify-center font-bold">
-                    1
-                  </span>
-                )}
-                Enter Prompt
+              <div className="relative">
+                <div className="w-24 h-24 rounded-full border border-white/10 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center animate-ping" />
+                </div>
+                <MessageCircleQuestion className="absolute inset-0 m-auto w-8 h-8 text-white animate-pulse" />
               </div>
-              <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  phase === 'questions'
-                    ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
-                }`}
-              >
-                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">
-                  2
-                </span>
-                Answer Questions
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-800/50 text-zinc-500 border border-zinc-700/50">
-                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">
-                  3
-                </span>
-                Enhanced Prompt
+              <div className="text-center space-y-4">
+                <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-white">
+                  Generating Logical Queries
+                </p>
+                <p className="text-xs text-muted-foreground font-mono">
+                  Deconstructing initial input parameters...
+                </p>
               </div>
             </motion.div>
           )}
 
-          {/* Main Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-900/50 border border-zinc-800 p-8 space-y-6"
-          >
-            {/* ─── INPUT PHASE ──────────────────────────────────── */}
-            {phase === 'input' && (
-              <form onSubmit={handleGenerateQuestions} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Your Prompt</label>
-                  <textarea
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl p-4 text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:outline-none resize-none transition-all"
-                    rows={4}
-                    placeholder="Enter your prompt here..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={!prompt.trim()}
-                  className="w-full group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/50 hover:shadow-xl hover:shadow-orange-500/60"
-                >
-                  <Zap className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                  Enhance Prompt
-                </Button>
-              </form>
-            )}
-
-            {/* ─── QUESTIONS PHASE ──────────────────────────────── */}
-            {phase === 'questions' && (
-              <div className="space-y-5">
-                <div className="flex items-center gap-3 pb-2 border-b border-zinc-800">
-                  <MessageCircleQuestion className="w-5 h-5 text-orange-400" />
-                  <h2 className="text-lg font-semibold text-zinc-200">
-                    Help us understand your needs
-                  </h2>
-                </div>
-
-                {questions.map((question, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="space-y-2"
-                  >
-                    <label className="flex items-start gap-3 text-sm font-medium text-zinc-300">
-                      <span className="shrink-0 w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold mt-0.5">
-                        {index + 1}
-                      </span>
-                      {question}
-                    </label>
-                    <textarea
-                      className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl p-3 pl-12 text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:outline-none resize-none transition-all text-sm"
-                      rows={2}
-                      placeholder="Type your answer..."
-                      value={answers[index]}
-                      onChange={(e) => {
-                        const newAnswers = [...answers];
-                        newAnswers[index] = e.target.value;
-                        setAnswers(newAnswers);
-                      }}
-                    />
-                  </motion.div>
-                ))}
-
+          {/* Phase: Enhancing */}
+          {phase === 'enhancing' && (
+            <motion.div
+              key="enhancing"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              className="min-h-[400px] flex flex-col items-center justify-center gap-12"
+            >
+              <div className="relative w-32 h-32">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-white/5 to-transparent animate-spin-slow" />
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="flex flex-col sm:flex-row gap-3 pt-4"
+                  className="absolute inset-4 rounded-full border border-white/10 flex items-center justify-center"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
                 >
-                  <Button
-                    onClick={handleSubmitAnswers}
-                    disabled={!allAnswered}
-                    className="flex-1 group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/50 hover:shadow-xl hover:shadow-orange-500/60 disabled:opacity-50 disabled:shadow-none"
-                  >
-                    <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                    Generate Enhanced Prompt
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={handleSkipQuestions}
-                    className="px-6 py-6 text-sm font-medium bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-zinc-400 hover:text-white transition-all"
-                  >
-                    <SkipForward className="w-4 h-4 mr-2" />
-                    Skip Questions
-                  </Button>
+                  <div className="w-2 h-2 rounded-full bg-white absolute -top-1" />
                 </motion.div>
-
-                {!allAnswered && (
-                  <p className="text-xs text-zinc-500 text-center">
-                    Answer all questions to generate the best possible prompt, or skip to enhance
-                    directly
-                  </p>
-                )}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-white animate-pulse" />
+                </div>
               </div>
-            )}
-
-            <div className="flex gap-2 mb-4">
-              {formats.raw && (
-                <button
-                  onClick={() => setActiveTab('raw')}
-                  className={`px-3 py-1 rounded-md text-sm ${
-                    activeTab === 'raw' ? 'bg-orange-500 text-black' : 'bg-zinc-800 text-zinc-300'
-                  }`}
-                >
-                  Raw
-                </button>
-              )}
-
-              {formats.markdown && (
-                <button
-                  onClick={() => setActiveTab('markdown')}
-                  className={`px-3 py-1 rounded-md text-sm ${
-                    activeTab === 'markdown'
-                      ? 'bg-orange-500 text-black'
-                      : 'bg-zinc-800 text-zinc-300'
-                  }`}
-                >
-                  Markdown
-                </button>
-              )}
-
-              {formats.json && (
-                <button
-                  onClick={() => setActiveTab('json')}
-                  className={`px-3 py-1 rounded-md text-sm ${
-                    activeTab === 'json' ? 'bg-orange-500 text-black' : 'bg-zinc-800 text-zinc-300'
-                  }`}
-                >
-                  JSON
-                </button>
-              )}
-            </div>
-            {/* ─── RESULT PHASE ─────────────────────────────────── */}
-            {phase === 'result' && (
-              <>
-                {/* {response.slice(7) && ( */}
-                {formats.raw && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-zinc-300">Enhanced Prompt</label>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCopy}
-                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                      >
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copy
-                      </Button>
-                    </div>
-                    <div className="relative bg-[#0B0F17] border border-[#1E2633] rounded-lg p-4 text-sm overflow-auto max-h-[400px]">
-                      <button
-                        onClick={() => {
-                          let text = '';
-
-                          if (activeTab === 'json') {
-                            text = JSON.stringify(formats.json, null, 2);
-                          } else {
-                            text = formats[activeTab] || '';
-                          }
-
-                          navigator.clipboard.writeText(text);
-                        }}
-                        className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-[#1A2230] hover:bg-[#2A3240]"
-                      >
-                        Copy
-                      </button>
-
-                      <pre className="whitespace-pre-wrap text-orange-200 text-xs">
-                        {activeTab === 'json'
-                          ? JSON.stringify(formats.json, null, 2)
-                          : formats[activeTab]}
-                      </pre>
-                    </div>
-
+              <div className="text-center space-y-6">
+                <div className="space-y-2">
+                  <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-white">
+                    System Processing
+                  </p>
+                  <p className="text-xs text-muted-foreground font-mono">
+                    {STATUS_MESSAGES[statusIndex].text}
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-center">
+                  {STATUS_MESSAGES.map((_, i) => (
                     <div
-                      ref={input2Ref as unknown as React.RefObject<HTMLDivElement>}
-                      className="w-full bg-zinc-800/50 text-white p-6 rounded-xl border border-zinc-700 prose prose-invert max-w-none"
+                      key={i}
+                      className={`w-1 h-1 rounded-full transition-all duration-500 ${i === statusIndex ? 'bg-white w-4' : 'bg-white/20'}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Main Interaction Phases */}
+          {(phase === 'input' || phase === 'questions' || phase === 'result') && (
+            <motion.div
+              key="main-content"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-24"
+            >
+              {/* Hero Section */}
+              <div className="flex flex-col items-start text-left max-w-4xl">
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="w-8 h-px bg-foreground/30" />
+                  <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground">
+                    Architectural Refinement
+                  </span>
+                </div>
+                <h1 className="text-6xl md:text-7xl lg:text-[100px] font-display tracking-tight leading-[0.9] text-foreground mb-8">
+                  Prompt Enhancer
+                </h1>
+                <p className="text-xl text-muted-foreground max-w-2xl font-display font-light leading-relaxed">
+                  Transform raw concepts into high-density logical instructions. Our multi-phase
+                  synthesizer optimizes for structural integrity and model fit.
+                </p>
+              </div>
+
+              {/* Step Indicators */}
+              {phase !== 'result' && (
+                <div className="flex items-center gap-8 py-8 border-y border-foreground/5 overflow-x-auto no-scrollbar">
+                  {[
+                    { id: 'input', label: 'Input Matrix', icon: Terminal },
+                    { id: 'questions', label: 'Context Logic', icon: MessageCircleQuestion },
+                    { id: 'enhancing', label: 'Synthesis', icon: Cpu },
+                  ].map((step, i) => (
+                    <div
+                      key={step.id}
+                      className={cn(
+                        'flex items-center gap-3 shrink-0 transition-opacity',
+                        phase === step.id ? 'opacity-100' : 'opacity-40'
+                      )}
                     >
-                      <ReactMarkdown>{response}</ReactMarkdown>
+                      <div className="w-8 h-8 rounded-full border border-foreground/10 flex items-center justify-center font-mono text-[10px]">
+                        {i + 1}
+                      </div>
+                      <span className="text-[10px] font-mono uppercase tracking-widest">
+                        {step.label}
+                      </span>
+                      {i < 2 && <ArrowRight className="w-3 h-3 ml-4 opacity-20" />}
                     </div>
+                  ))}
+                </div>
+              )}
 
-                    {/* Quick Actions */}
-                    <div className="flex flex-wrap gap-3 justify-center pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          handleCopy();
-                          toast.success('Prompt copied! Opening ChatGPT...');
-                          window.open('https://chat.openai.com/chat', '_blank');
-                        }}
-                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                      >
-                        <SiOpenai className="mr-2" fill="#0BA37F" />
-                        Open in ChatGPT
-                      </Button>
-
-                      <svg width="0" height="0">
-                        <linearGradient id="gemini-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop stopColor="#AF78B2" offset="0%" />
-                          <stop stopColor="#D96E6A" offset="100%" />
-                        </linearGradient>
-                      </svg>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          handleCopy();
-                          toast.success('Prompt copied! Opening Gemini...');
-                          window.open('https://gemini.google.com/app', '_blank');
-                        }}
-                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                      >
-                        <RiGeminiFill
-                          className="mr-2"
-                          style={{ fill: 'url(#gemini-gradient)' }}
-                          size={18}
-                        />
-                        Open in Gemini
-                      </Button>
-                    </div>
-
-                    {/* Start Over */}
-                    <div className="flex justify-center pt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setPhase('input');
-                          setPrompt('');
-                          setResponse('');
-                          setQuestions([]);
-                          setAnswers(['', '', '', '', '']);
-                          setShowFeedback(false);
-                          setFeedbackState(null);
-                        }}
-                        className="text-zinc-500 hover:text-zinc-300"
-                      >
-                        ← Enhance another prompt
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Feedback */}
-                <AnimatePresence>
-                  {showFeedback && (
+              {/* Content Area */}
+              <div className="grid gap-16 lg:grid-cols-12 items-start">
+                <div className="lg:col-span-8 space-y-12">
+                  {/* ─── INPUT PHASE ──────────────────────────────────── */}
+                  {phase === 'input' && (
                     <motion.div
-                      key="feedback"
-                      initial={{ opacity: 0, scale: 0.9 }}
+                      initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.4 }}
-                      className="flex flex-col items-center space-y-3 bg-zinc-800/50 p-6 rounded-xl border border-zinc-700"
+                      className="group relative"
                     >
-                      <p className="text-sm text-zinc-300">Was this enhancement helpful?</p>
-                      <div className="flex gap-6">
-                        <ThumbsUpIcon
-                          size={30}
-                          className={`${feedbackState === 'like' ? 'text-green-400' : 'text-zinc-500'} hover:text-green-400 hover:scale-110 transition cursor-pointer`}
-                          onClick={handlePositiveFeedback}
-                          fill={feedbackState === 'like' ? 'currentColor' : 'none'}
-                        />
-                        <ThumbsDownIcon
-                          size={30}
-                          className={`${feedbackState === 'dislike' ? 'text-red-400' : 'text-zinc-500'} hover:text-red-400 hover:scale-110 transition cursor-pointer`}
-                          onClick={handleNegativeFeedback}
-                          fill={feedbackState === 'dislike' ? 'currentColor' : 'none'}
-                        />
+                      <div className="absolute -inset-[1px] bg-gradient-to-r from-white/10 to-transparent rounded-2xl" />
+                      <div className="relative bg-black border border-foreground/10 rounded-2xl overflow-hidden p-8">
+                        <div className="flex items-center justify-between mb-8">
+                          <div className="flex items-center gap-3">
+                            <Terminal className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                              Source Input
+                            </span>
+                          </div>
+                        </div>
+                        <form onSubmit={handleGenerateQuestions} className="space-y-8">
+                          <Textarea
+                            placeholder="Insert base instruction set..."
+                            className="min-h-[300px] resize-none bg-transparent border-none focus:ring-0 text-xl font-display font-light text-foreground p-0 placeholder:text-muted-foreground/30"
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                          />
+                          <div className="flex items-center justify-end pt-8 border-t border-foreground/5">
+                            <Button
+                              type="submit"
+                              disabled={!prompt.trim()}
+                              className="rounded-full bg-white text-black hover:bg-white/90 px-12 py-6 font-mono text-[10px] uppercase tracking-widest transition-all duration-500 flex items-center gap-4"
+                            >
+                              <span>Initialize Enhancement</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </form>
                       </div>
                     </motion.div>
                   )}
-                </AnimatePresence>
-              </>
-            )}
-          </motion.div>
-        </div>
-      </div>
-    </>
+
+                  {/* ─── QUESTIONS PHASE ──────────────────────────────── */}
+                  {phase === 'questions' && (
+                    <div className="space-y-8">
+                      <div className="p-8 rounded-2xl bg-white/[0.02] border border-foreground/5">
+                        <div className="flex items-center gap-3 mb-8">
+                          <MessageCircleQuestion className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                            Contextual Logic Expansion
+                          </span>
+                        </div>
+                        <div className="space-y-12">
+                          {questions.map((question, index) => (
+                            <motion.div
+                              key={index}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="space-y-4"
+                            >
+                              <p className="text-xl font-display font-light text-foreground flex gap-4">
+                                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mt-2">
+                                  {String(index + 1).padStart(2, '0')}
+                                </span>
+                                {question}
+                              </p>
+                              <Textarea
+                                className="w-full bg-white/[0.03] border-none rounded-xl p-4 text-white focus:ring-1 focus:ring-white/20 resize-none transition-all font-display font-light text-lg h-24"
+                                placeholder="Specify parameter value..."
+                                value={answers[index]}
+                                onChange={(e) => {
+                                  const newAnswers = [...answers];
+                                  newAnswers[index] = e.target.value;
+                                  setAnswers(newAnswers);
+                                }}
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <Button
+                          onClick={handleSubmitAnswers}
+                          disabled={!allAnswered}
+                          className="flex-1 rounded-full bg-white text-black hover:bg-white/90 py-8 font-mono text-[10px] uppercase tracking-widest transition-all duration-500 disabled:opacity-20"
+                        >
+                          Execute Synthesis
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={handleSkipQuestions}
+                          className="rounded-full border border-white/10 px-8 font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-white transition-all"
+                        >
+                          Skip Contextual Phase
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── RESULT PHASE ─────────────────────────────────── */}
+                  {phase === 'result' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-12"
+                    >
+                      <div className="group relative">
+                        <div className="absolute -inset-[1px] bg-gradient-to-r from-white/10 to-transparent rounded-2xl" />
+                        <div className="relative bg-black border border-foreground/10 rounded-2xl overflow-hidden">
+                          <div className="flex items-center justify-between p-8 border-b border-foreground/5">
+                            <div className="flex items-center gap-6">
+                              {['raw', 'markdown', 'json'].map(
+                                (tab) =>
+                                  formats[tab as keyof typeof formats] && (
+                                    <button
+                                      key={tab}
+                                      onClick={() => setActiveTab(tab as any)}
+                                      className={cn(
+                                        'text-[10px] font-mono uppercase tracking-[0.2em] transition-colors',
+                                        activeTab === tab
+                                          ? 'text-white'
+                                          : 'text-muted-foreground hover:text-white'
+                                      )}
+                                    >
+                                      {tab}
+                                    </button>
+                                  )
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCopy}
+                              className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground hover:text-white"
+                            >
+                              <Copy className="w-3 h-3 mr-2" />
+                              Extract
+                            </Button>
+                          </div>
+
+                          <div className="p-8 min-h-[400px] overflow-auto custom-scrollbar">
+                            {activeTab === 'markdown' ? (
+                              <div className="prose prose-invert max-w-none font-display font-light text-xl leading-relaxed text-muted-foreground/90">
+                                <ReactMarkdown>{formats.markdown || ''}</ReactMarkdown>
+                              </div>
+                            ) : (
+                              <pre className="text-sm font-mono text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                                {activeTab === 'json'
+                                  ? JSON.stringify(formats.json, null, 2)
+                                  : formats.raw}
+                              </pre>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Deployment Actions */}
+                      <div className="flex flex-wrap gap-4 justify-center">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            handleCopy();
+                            window.open('https://chat.openai.com/', '_blank');
+                          }}
+                          className="rounded-full border-foreground/10 bg-white/[0.02] px-8 py-6 font-mono text-[10px] uppercase tracking-widest hover:bg-white/[0.05] transition-all"
+                        >
+                          <SiOpenai className="mr-3 w-4 h-4" fill="#fff" />
+                          Deploy to ChatGPT
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            handleCopy();
+                            window.open('https://gemini.google.com/', '_blank');
+                          }}
+                          className="rounded-full border-foreground/10 bg-white/[0.02] px-8 py-6 font-mono text-[10px] uppercase tracking-widest hover:bg-white/[0.05] transition-all"
+                        >
+                          <RiGeminiFill className="mr-3 w-4 h-4" fill="#fff" />
+                          Deploy to Gemini
+                        </Button>
+                      </div>
+
+                      <div className="flex justify-center">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setPhase('input');
+                            setPrompt('');
+                            setResponse('');
+                            setQuestions([]);
+                            setAnswers([]);
+                            setShowFeedback(false);
+                            setFeedbackState(null);
+                          }}
+                          className="text-[10px] font-mono uppercase tracking-[0.3em] text-muted-foreground hover:text-white"
+                        >
+                          Initialize New Session
+                        </Button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Sidebar: Metadata & Feedback */}
+                <div className="lg:col-span-4 space-y-12">
+                  <div className="p-8 rounded-2xl bg-white/[0.02] border border-foreground/5 space-y-6">
+                    <div className="flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                        System Metrics
+                      </span>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center py-2 border-b border-foreground/5">
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                          Stability
+                        </span>
+                        <span className="text-[10px] font-mono text-green-400">OPTIMAL</span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-foreground/5">
+                        <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                          Phase
+                        </span>
+                        <span className="text-[10px] font-mono text-white uppercase">{phase}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {phase === 'result' && showFeedback && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="p-8 rounded-2xl bg-white/[0.02] border border-foreground/5 space-y-6"
+                    >
+                      <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground text-center">
+                        Did you like it ?
+                      </p>
+                      <div className="flex justify-center gap-12">
+                        <button
+                          onClick={handlePositiveFeedback}
+                          className={cn(
+                            'transition-all hover:scale-110',
+                            feedbackState === 'like'
+                              ? 'text-white'
+                              : 'text-muted-foreground hover:text-white'
+                          )}
+                        >
+                          <ThumbsUpIcon
+                            size={24}
+                            fill={feedbackState === 'like' ? 'currentColor' : 'none'}
+                          />
+                        </button>
+                        <button
+                          onClick={handleNegativeFeedback}
+                          className={cn(
+                            'transition-all hover:scale-110',
+                            feedbackState === 'dislike'
+                              ? 'text-white'
+                              : 'text-muted-foreground hover:text-white'
+                          )}
+                        >
+                          <ThumbsDownIcon
+                            size={24}
+                            fill={feedbackState === 'dislike' ? 'currentColor' : 'none'}
+                          />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+    </div>
   );
 }

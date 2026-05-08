@@ -1,14 +1,16 @@
-"use server";
+'use server';
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import Groq from 'groq-sdk';
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
 if (!apiKey) {
-  throw new Error("Missing Gemini API Key");
+  throw new Error('Missing Groq API Key');
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
+const groq = new Groq({
+  apiKey: apiKey,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,24 +19,28 @@ export async function POST(req: NextRequest) {
     // 1. Auth & Stats
     let newBadges: any[] = [];
     try {
-      const { getServerSession } = await import("next-auth");
-      const { authOptions } = await import("@/lib/auth");
+      const { getServerSession } = await import('next-auth');
+      const { authOptions } = await import('@/lib/auth');
       const session = await getServerSession(authOptions);
 
       if (session?.user?.email) {
-        const { supabaseAdmin } = await import("@/lib/supabase");
-        const { data: u } = await supabaseAdmin.from('users').select('id').eq('email', session.user.email).single();
+        const { supabaseAdmin } = await import('@/lib/supabase');
+        const { data: u } = await supabaseAdmin
+          .from('users')
+          .select('id')
+          .eq('email', session.user.email)
+          .single();
         if (u) {
-          const { incrementUserStat } = await import("@/lib/user-stats");
+          const { incrementUserStat } = await import('@/lib/user-stats');
           newBadges = await incrementUserStat(u.id, 'prompt_scores_viewed');
 
-          const { logActivityAndCalculateStreak } = await import("@/lib/streaks");
+          const { logActivityAndCalculateStreak } = await import('@/lib/streaks');
           await logActivityAndCalculateStreak(u.id, 'prompt_scored', { prompt });
         }
       }
-    } catch (e) { console.error("Stats error", e); }
-
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    } catch (e) {
+      console.error('Stats error', e);
+    }
 
     const systemPrompt = `You are an expert Prompt Quality Evaluator trained to assess the effectiveness of user-generated prompts for Large Language Models (LLMs) like Gemini or GPT. Your task is to analyze a given prompt and return a strict JSON object with integer scores (1 to 10) across the following six categories:
 
@@ -64,13 +70,25 @@ You must also include one brief and actionable suggestion for improvement (if an
 
 `;
 
-    const result = await model.generateContent(`${systemPrompt}\n\nUser Prompt:\n${prompt}`);
+    const completion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+        {
+          role: 'user',
+          content: `User Prompt:\n${prompt}`,
+        },
+      ],
+      model: 'openai/gpt-oss-20b',
+      response_format: { type: 'json_object' },
+    });
 
-
-    const text = result.response.text();
+    const text = completion.choices[0]?.message?.content || '';
 
     const match = text.match(/\{[\s\S]*?\}/);
-    if (!match) throw new Error("No valid JSON in Gemini response");
+    if (!match) throw new Error('No valid JSON in Groq response');
 
     const raw = JSON.parse(match[0]);
 
@@ -84,20 +102,16 @@ You must also include one brief and actionable suggestion for improvement (if an
     };
 
     const total = Object.values(criteriaScores).reduce((sum, score) => sum + score, 0);
-    const overallScore = Math.round((total / 60) * 100); // convert to percent
+    const overallScore = Number((total / 6).toFixed(1)); // 1-10 scale
 
     return NextResponse.json({
       overallScore,
       criteriaScores,
-      feedback: raw.tip || "Great work! No improvement needed.",
-      newBadges
+      feedback: raw.tip || 'Great work! No improvement needed.',
+      newBadges,
     });
-
   } catch (error) {
-    console.error("Scoring Error:", error);
-    return NextResponse.json(
-      { error: "Invalid Response format from Gemini." },
-      { status: 500 }
-    );
+    console.error('Scoring Error:', error);
+    return NextResponse.json({ error: 'Invalid Response format from Groq.' }, { status: 500 });
   }
 }
