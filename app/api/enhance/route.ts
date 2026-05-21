@@ -119,6 +119,61 @@ User Input Prompt:
     // Build formats
     const formats = buildFormats(text, classification.type);
 
+    try {
+      const { getServerSession } = await import('next-auth');
+      const { authOptions } = await import('@/lib/auth');
+      const { supabaseAdmin } = await import('@/lib/supabase');
+
+      const session = await getServerSession(authOptions);
+
+      let userId = null;
+
+      if (session?.user?.email) {
+        const { data: userData } = await supabaseAdmin
+          .from('users')
+          .select('id')
+          .eq('email', session.user.email)
+          .single();
+
+        userId = userData?.id || null;
+      }
+
+      // Find matching prompt
+      const { data: existingPrompt } = await supabaseAdmin
+        .from('prompts')
+        .select('id')
+        .eq('prompt_value', prompt)
+        .limit(1)
+        .single();
+
+      await supabaseAdmin.from('prompt_runs').insert({
+        prompt_id: existingPrompt?.id || null,
+
+        user_id: userId,
+
+        original_prompt: prompt,
+
+        enhanced_prompt: text,
+
+        prompt_type: classification.type,
+
+        selected_format:
+          classification.type === 'image' || classification.type === 'video'
+            ? 'json'
+            : classification.type === 'content'
+              ? 'markdown'
+              : 'raw',
+
+        formats_json: formats,
+
+        answers_json: answers,
+
+        enhancement_model: 'gemini-2.5-flash-lite',
+      });
+    } catch (e) {
+      console.error('Prompt run storage failed:', e);
+    }
+
     return NextResponse.json({
       type: classification.type,
       formats,
