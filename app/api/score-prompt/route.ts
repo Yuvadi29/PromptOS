@@ -1,14 +1,17 @@
-"use server";
+'use server';
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { NextRequest, NextResponse } from "next/server";
+import OpenAI from 'openai';
+import { NextRequest, NextResponse } from 'next/server';
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const apiKey = process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
 if (!apiKey) {
-  throw new Error("Missing Gemini API Key");
+  throw new Error('Missing OpenRouter API Key');
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
+const openrouter = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,28 +20,32 @@ export async function POST(req: NextRequest) {
     // 1. Auth & Stats
     let newBadges: any[] = [];
     try {
-      const { getServerSession } = await import("next-auth");
-      const { authOptions } = await import("@/lib/auth");
+      const { getServerSession } = await import('next-auth');
+      const { authOptions } = await import('@/lib/auth');
       const session = await getServerSession(authOptions);
 
       if (session?.user?.email) {
-        const { supabaseAdmin } = await import("@/lib/supabase");
-        const { data: u } = await supabaseAdmin.from('users').select('id').eq('email', session.user.email).single();
+        const { supabaseAdmin } = await import('@/lib/supabase');
+        const { data: u } = await supabaseAdmin
+          .from('users')
+          .select('id')
+          .eq('email', session.user.email)
+          .single();
         if (u) {
-          const { incrementUserStat } = await import("@/lib/user-stats");
+          const { incrementUserStat } = await import('@/lib/user-stats');
           newBadges = await incrementUserStat(u.id, 'prompt_scores_viewed');
 
-          const { logActivityAndCalculateStreak } = await import("@/lib/streaks");
+          const { logActivityAndCalculateStreak } = await import('@/lib/streaks');
           await logActivityAndCalculateStreak(u.id, 'prompt_scored', { prompt });
         }
       }
-    } catch (e) { console.error("Stats error", e); }
+    } catch (e) {
+      console.error('Stats error', e);
+    }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const systemPrompt = `You are an expert Prompt Quality Evaluator trained to assess the effectiveness of user-generated prompts for Large Language Models (LLMs) like Claude or GPT. Your task is to analyze a given prompt and return a strict JSON object with integer scores (1 to 10) across the following six categories:
 
-    const systemPrompt = `You are an expert Prompt Quality Evaluator trained to assess the effectiveness of user-generated prompts for Large Language Models (LLMs) like Gemini or GPT. Your task is to analyze a given prompt and return a strict JSON object with integer scores (1 to 10) across the following six categories:
-
-1. Clarity: Is the prompt’s intent clear and easy to understand?
+1. Clarity: Is the prompt's intent clear and easy to understand?
 2. Specificity: Does the prompt provide precise and actionable direction?
 3. Model_Fit: Is the prompt optimized for generating high-quality results from modern LLMs?
 4. Relevance: Does the prompt include all essential and contextually relevant details?
@@ -64,13 +71,15 @@ You must also include one brief and actionable suggestion for improvement (if an
 
 `;
 
-    const result = await model.generateContent(`${systemPrompt}\n\nUser Prompt:\n${prompt}`);
+    const completion = await openrouter.chat.completions.create({
+      model: 'google/gemma-4-31b-it:free',
+      messages: [{ role: 'user', content: `${systemPrompt}\n\nUser Prompt:\n${prompt}` }],
+    });
 
-
-    const text = result.response.text();
+    const text = completion.choices[0]?.message?.content ?? '';
 
     const match = text.match(/\{[\s\S]*?\}/);
-    if (!match) throw new Error("No valid JSON in Gemini response");
+    if (!match) throw new Error('No valid JSON in OpenRouter response');
 
     const raw = JSON.parse(match[0]);
 
@@ -89,15 +98,11 @@ You must also include one brief and actionable suggestion for improvement (if an
     return NextResponse.json({
       overallScore,
       criteriaScores,
-      feedback: raw.tip || "Great work! No improvement needed.",
-      newBadges
+      feedback: raw.tip || 'Great work! No improvement needed.',
+      newBadges,
     });
-
   } catch (error) {
-    console.error("Scoring Error:", error);
-    return NextResponse.json(
-      { error: "Invalid Response format from Gemini." },
-      { status: 500 }
-    );
+    console.error('Scoring Error:', error);
+    return NextResponse.json({ error: 'Invalid Response format from LLM.' }, { status: 500 });
   }
 }

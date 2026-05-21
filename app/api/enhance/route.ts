@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { classifyPrompt } from '@/lib/prompt-classifier';
 import { getTemplate } from '@/lib/prompt-templates';
 import { buildFormats } from '@/lib/prompt-formatters';
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+const apiKey = process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
 if (!apiKey) {
-  throw new Error('Missing Gemini API Key');
+  throw new Error('Missing OpenRouter API Key');
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
+const openrouter = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey,
+});
 
 export async function POST(req: NextRequest) {
   let prompt = '';
@@ -56,8 +59,6 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     console.error('Stats error', e);
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
   // Build context section from Q&A answers if provided
   let contextSection = '';
@@ -107,14 +108,17 @@ Formatting Instructions:
 - Present ONLY the final enhanced prompt inside triple backticks (\`\`\`).
 - Do NOT include any explanations before or after.
 - The enhanced prompt must sound natural, precise, goal-driven, and professional.
-${contextSection}
-User Input Prompt: 
+${contextSection}User Input Prompt: 
 """${prompt}"""
 `;
 
   try {
-    const result = await model.generateContent(systemPrompt + prompt);
-    const text = result.response.text().replace(/``` /g, '').trim();
+    const completion = await openrouter.chat.completions.create({
+      model: 'google/gemini-2.5-flash-lite',
+      messages: [{ role: 'user', content: systemPrompt + prompt }],
+    });
+
+    const text = (completion.choices[0]?.message?.content ?? '').replace(/``` /g, '').trim();
 
     // Build formats
     const formats = buildFormats(text, classification.type);
@@ -124,7 +128,7 @@ User Input Prompt:
       formats,
     });
   } catch (error: any) {
-    console.error('Gemini API Error:', error);
+    console.error('OpenRouter API Error:', error);
     return NextResponse.json({ error: 'API Error', message: error.message }, { status: 400 });
   }
 }

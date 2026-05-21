@@ -1,27 +1,30 @@
-import { NextRequest } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { NextRequest } from 'next/server';
+import OpenAI from 'openai';
 
 export async function POST(req: NextRequest) {
+  let promptText = '';
   try {
-    const { prompt } = await req.json();
+    const body = await req.json();
+    promptText = body.prompt || '';
 
-    if (!prompt || typeof prompt !== "string") {
-      return new Response(JSON.stringify({ error: "Invalid prompt" }), {
+    if (!promptText || typeof promptText !== 'string') {
+      return new Response(JSON.stringify({ error: 'Invalid prompt' }), {
         status: 400,
       });
     }
 
-    // Move API key check inside the handler to prevent serverless cold-start crashes
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-      console.error("Missing Gemini API Key in environment variables.");
-      return new Response(JSON.stringify({ error: "API Key Configuration Error" }), {
+      console.error('Missing OpenRouter API Key in environment variables.');
+      return new Response(JSON.stringify({ error: 'API Key Configuration Error' }), {
         status: 500,
       });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const openrouter = new OpenAI({
+      baseURL: 'https://openrouter.ai/api/v1',
+      apiKey,
+    });
 
     const systemPrompt = `You are an expert prompt engineering assistant. A user wants to create/enhance a prompt and has provided an initial description of what they want.
 
@@ -41,49 +44,55 @@ IMPORTANT RULES:
 - Do NOT include any explanation or text outside the JSON array.
 - Do NOT wrap in markdown code blocks.
 
-User's prompt: """${prompt}"""`;
+User's prompt: """${promptText}"""`;
 
-    const result = await model.generateContent([systemPrompt]);
-    const text = result.response.text();
+    // We use a cheap, fast paid model (google/gemini-2.5-flash-lite) to avoid 429 rate limit errors from the free tier.
+    const completion = await openrouter.chat.completions.create({
+      model: 'google/gemini-2.5-flash-lite',
+      messages: [{ role: 'user', content: systemPrompt }],
+    });
+
+    const text = completion.choices[0]?.message?.content ?? '';
 
     // Parse the JSON array from the response safely
     const cleanText = text
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
+      .replace(/```json\n?/g, '')
+      .replace(/```\n?/g, '')
       .trim();
 
     let questions;
     try {
       questions = JSON.parse(cleanText);
-    } catch (parseError) {
-      console.error("Failed to parse Gemini output as JSON:", text);
-      throw new Error("Invalid JSON from LLM");
+    } catch {
+      console.error('Failed to parse OpenRouter output as JSON:', text);
+      throw new Error('Invalid JSON from LLM');
     }
 
     if (!Array.isArray(questions) || questions.length !== 5) {
-      throw new Error("Invalid questions format returned by LLM");
+      throw new Error('Invalid questions format returned by LLM');
     }
 
     return new Response(JSON.stringify({ questions }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { 'Content-Type': 'application/json' },
     });
-
   } catch (error) {
-    console.error("Error generating questions:", error);
-    
-    // FALLBACK: If Gemini API is rate-limited, down, or hallucinates bad JSON, 
+    console.error('Error generating questions:', error);
+
+    const promptSnippet = promptText ? `for "${promptText.substring(0, 30)}..."` : '';
+
+    // FALLBACK: If OpenRouter API is rate-limited (429), down, or hallucinates bad JSON,
     // we return generic clarifying questions so the UI does not crash in production.
     const fallbackQuestions = [
-      "Who is the specific target audience or AI model for this prompt?",
-      "What tone and style should the output have (e.g., professional, casual, analytical)?",
-      "Are there any specific constraints, word limits, or things to avoid?",
-      "What format should the final output be in (e.g., bullet points, essay, code)?",
-      "What is the ultimate goal or key takeaway you want to achieve with this output?"
+      `Who is the specific target audience or AI model ${promptSnippet}?`,
+      'What tone and style should the output have (e.g., professional, casual, analytical)?',
+      'Are there any specific constraints, word limits, or things to avoid?',
+      'What format should the final output be in (e.g., bullet points, essay, code)?',
+      'What is the ultimate goal or key takeaway you want to achieve with this output?',
     ];
 
     return new Response(JSON.stringify({ questions: fallbackQuestions }), {
-      headers: { "Content-Type": "application/json" },
-      status: 200 // Return 200 with fallback so the UI can proceed normally
+      headers: { 'Content-Type': 'application/json' },
+      status: 200, // Return 200 with fallback so the UI can proceed normally
     });
   }
 }
