@@ -174,17 +174,6 @@ export default function PromptEnhancer() {
             return;
           }
 
-          const { data: userData, error } = await supabaseAdmin
-            .from('users')
-            .select('id')
-            .eq('email', session?.user?.email)
-            .single();
-
-          if (error || !userData) {
-            console.error('Failed to fetch user ID from Supabase: ', error);
-            return;
-          }
-
           const res = await fetch('/api/save-prompt', {
             method: 'POST',
             headers: {
