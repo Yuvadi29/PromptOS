@@ -1,8 +1,8 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import Google from "next-auth/providers/google";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -14,7 +14,7 @@ const handler = NextAuth({
 
             // Save user info to supabase manually
             const { error } = await supabaseAdmin.from("users").upsert({
-                id: user?.id,
+                id: String(user?.id), // Enforce string coercion just to be doubly safe
                 name: user?.name,
                 email: user?.email,
                 image: user?.image,
@@ -28,6 +28,8 @@ const handler = NextAuth({
         },
     },
     secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST }
