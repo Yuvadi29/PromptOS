@@ -191,7 +191,6 @@ export default function PromptEnhancer() {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              userId: userData?.id,
               prompt: response,
               originalPrompt: prompt,
             }),
