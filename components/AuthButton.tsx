@@ -1,39 +1,100 @@
-"use client";
+'use client';
 
-import { signIn, signOut, useSession } from "next-auth/react";
-import { Button } from "./ui/button";
-import { useRouter } from "next/navigation";
+import { signIn, signOut, useSession } from 'next-auth/react';
+import { Button } from './ui/button';
+import { useRouter } from 'next/navigation';
 
-export function AuthButton() {
-    const { data: session } = useSession();
-    const router = useRouter();
+interface AuthButtonProps {
+  isMobile?: boolean;
+}
 
-    const handleLogin = async () => {
-        // Use NextAuth's built-in redirect with callbackUrl
-        await signIn("google", { callbackUrl: '/dashboard' });
-    };
+export function AuthButton({ isMobile = false }: AuthButtonProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
 
-    if (session) {
-        return (
-            <div className="flex items-center gap-4">
-                <Button
-                    onClick={() => router.push('/dashboard')}
-                    className="group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 text-white border-0 cursor-pointer"
-                >
-                    Go to Dashboard
-                </Button>
-                <Button
-                    variant="outline"
-                    onClick={() => signOut()}
-                    className="px-8 py-6 text-lg font-semibold border-border bg-card/50 hover:bg-card text-foreground backdrop-blur-sm cursor-pointer"
-                >
-                    Sign Out
-                </Button>
-            </div>
-        );
+  const handleLogin = async () => {
+    await signIn('google', { callbackUrl: '/dashboard' });
+  };
+
+  if (session) {
+    if (isMobile) {
+      return (
+        <div className="flex flex-col gap-2 w-full">
+          <Button
+            onClick={() => router.push('/dashboard')}
+            className="w-full justify-center bg-foreground hover:bg-foreground/90 text-background font-medium py-2 rounded-lg cursor-pointer"
+          >
+            Dashboard
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => signOut()}
+            className="w-full justify-center border-border bg-card/50 hover:bg-card text-foreground cursor-pointer"
+          >
+            Sign Out
+          </Button>
+        </div>
+      );
     }
 
     return (
-        <Button onClick={handleLogin} className="cursor-pointer p-6 group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/20 hover:shadow-xl hover:shadow-orange-500/30 text-white border-0">Get Started</Button>
-    )
+      <div className="flex items-center gap-3">
+        <Button
+          onClick={() => router.push('/dashboard')}
+          size="sm"
+          className="bg-foreground hover:bg-foreground/90 text-background font-medium cursor-pointer"
+        >
+          Dashboard
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => signOut()}
+          className="text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          Sign Out
+        </Button>
+      </div>
+    );
+  }
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-2 w-full">
+        <Button
+          variant="ghost"
+          onClick={handleLogin}
+          className="w-full justify-start text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          Sign in
+        </Button>
+        <Button
+          onClick={handleLogin}
+          className="w-full justify-center bg-foreground hover:bg-foreground/90 text-background font-medium py-2 rounded-lg cursor-pointer"
+        >
+          Get Started
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleLogin}
+        className="text-muted-foreground hover:text-foreground cursor-pointer"
+      >
+        Sign in
+      </Button>
+      <Button
+        size="sm"
+        onClick={handleLogin}
+        className="bg-foreground hover:bg-foreground/90 text-background cursor-pointer"
+      >
+        Get Started
+      </Button>
+    </div>
+  );
 }

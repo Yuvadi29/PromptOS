@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing prompt' }, { status: 400 });
   }
 
+  let userId: string | null = null;
   // Auth & Stats Logging
   try {
     const { getServerSession } = await import('next-auth');
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
         .eq('email', session.user.email)
         .single();
       if (u) {
+        userId = String(u.id);
         const { logActivityAndCalculateStreak } = await import('@/lib/streaks');
         // Fire and forget so we don't delay the stream
         logActivityAndCalculateStreak(u.id, 'prompt_enhanced', { prompt }).catch(console.error);
@@ -123,9 +125,38 @@ ${contextSection}User Input Prompt:
     // Build formats
     const formats = buildFormats(text, classification.type);
 
+    let saved = false;
+    if (userId) {
+      const { supabaseAdmin } = await import('@/lib/supabase');
+
+      const { data: maxData } = await supabaseAdmin
+        .from('prompts')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1);
+      const maxId = maxData?.[0]?.id || 0;
+      const nextId = Number(maxId) + 1;
+
+      const { error: saveError } = await supabaseAdmin.from('prompts').insert({
+        id: nextId,
+        created_by: userId,
+        prompt_value: formats.raw || text,
+        original_prompt: prompt,
+      });
+
+      if (saveError) {
+        console.error('Failed to save prompt in same API call:', saveError);
+      } else {
+        saved = true;
+        const { updateUserStreak } = await import('@/lib/streaks');
+        await updateUserStreak(userId).catch(console.error);
+      }
+    }
+
     return NextResponse.json({
       type: classification.type,
       formats,
+      saved,
     });
   } catch (error: any) {
     console.error('OpenRouter API Error:', error);

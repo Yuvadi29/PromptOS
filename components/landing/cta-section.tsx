@@ -1,131 +1,84 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { AuthButton } from '@/components/AuthButton';
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Link from 'next/link';
+import { AsciiCube } from './ascii-cube';
+import { AsciiSphere } from './ascii-sphere';
 
-gsap.registerPlugin(ScrollTrigger);
+export function CtaSection() {
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
-export default function CTASection() {
-    const sectionRef = useRef<HTMLElement>(null);
-    const contentRef = useRef<HTMLDivElement>(null);
-    const circlesRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setIsVisible(true);
+      },
+      { threshold: 0.2 }
+    );
 
-    useEffect(() => {
-        const section = sectionRef.current;
-        const content = contentRef.current;
-        const circles = circlesRef.current;
-        if (!section || !content || !circles) return;
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
 
-        const ctx = gsap.context(() => {
-            // Pin briefly
-            ScrollTrigger.create({
-                trigger: section,
-                start: 'top top',
-                end: '+=50%',
-                pin: true,
-                pinSpacing: true,
-            });
-
-            // Scale content in
-            gsap.fromTo(
-                content,
-                { scale: 0.88, opacity: 0 },
-                {
-                    scale: 1,
-                    opacity: 1,
-                    ease: 'power2.out',
-                    scrollTrigger: {
-                        trigger: section,
-                        start: 'top 60%',
-                        end: 'top 10%',
-                        scrub: 1,
-                    },
-                }
-            );
-
-            // Pulsing circles expand with scroll
-            const circleEls = circles.children;
-            Array.from(circleEls).forEach((circle, i) => {
-                gsap.fromTo(
-                    circle,
-                    { scale: 0.5, opacity: 0 },
-                    {
-                        scale: 1,
-                        opacity: 0.08 - i * 0.015,
-                        ease: 'power1.out',
-                        scrollTrigger: {
-                            trigger: section,
-                            start: `top ${80 - i * 10}%`,
-                            end: `top ${30 - i * 5}%`,
-                            scrub: 1,
-                        },
-                    }
-                );
-            });
-        }, section);
-
-        return () => ctx.revert();
-    }, []);
-
-    return (
-        <section
-            ref={sectionRef}
-            className="relative h-screen flex items-center justify-center overflow-hidden bg-zinc-950"
+  return (
+    <section ref={sectionRef} className="relative py-32 overflow-hidden">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div
+          className={`relative rounded-2xl overflow-hidden transition-all duration-1000 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
         >
-            {/* Background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.06),transparent_70%)]" />
+          {/* Background with grid */}
+          <div className="absolute inset-0 bg-foreground" />
+          <div className="absolute inset-0 grid-pattern opacity-10" />
 
-            {/* Concentric circles — scroll-driven */}
-            <div ref={circlesRef} className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                {[300, 500, 700, 900].map((size, i) => (
-                    <div
-                        key={i}
-                        className="absolute rounded-full border border-orange-500/10 will-change-transform"
-                        style={{
-                            width: size,
-                            height: size,
-                            opacity: 0,
-                        }}
-                    />
-                ))}
-            </div>
+          {/* Cube animation as full background */}
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 overflow-hidden opacity-25">
+            <AsciiCube className="w-[600px] h-[500px]" />
+          </div>
 
-            {/* Content */}
-            <div
-                ref={contentRef}
-                className="relative z-10 text-center px-6 max-w-4xl mx-auto will-change-transform"
-            >
-                <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight mb-8">
-                    <span className="text-white block">Ready to</span>
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 block">
-                        Transform
-                    </span>
-                    <span className="text-white block">Your Prompts?</span>
+          <div className="relative z-10 px-8 lg:px-16 py-16 bg-transparent lg:py-0.5">
+            <div className="flex items-center justify-between gap-8">
+              <div className="max-w-2xl">
+                <h2 className="text-3xl lg:text-5xl font-semibold tracking-tight mb-6 text-background text-balance">
+                  Start crafting better prompts, today.
                 </h2>
 
-                <p className="text-zinc-500 text-lg md:text-xl max-w-2xl mx-auto mb-14 leading-relaxed">
-                    Join thousands of AI practitioners using PromptOS to craft better prompts,
-                    compare models, and build smarter workflows.
+                <p className="text-lg text-background/70 mb-8 leading-relaxed max-w-lg">
+                  Join developers shipping AI products faster with PromptOS. Free to start, open
+                  source forever.
                 </p>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <div className="animate-pulse-glow rounded-full">
-                        <AuthButton />
-                    </div>
-                    <Link
-                        href="/docs"
-                        data-cursor="pointer"
-                        className="group flex items-center gap-2 px-7 py-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-medium transition-all"
-                    >
-                        Documentation
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
+                <div className="flex flex-col sm:flex-row items-start gap-4">
+                  <Button
+                    size="lg"
+                    className="bg-background hover:bg-background/90 text-foreground px-6 h-12 text-sm font-medium group"
+                  >
+                    Get started free
+                    <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-0.5" />
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 px-6 text-sm font-medium border-background/30 text-background hover:bg-background/10 bg-transparent"
+                  >
+                    Talk to sales
+                  </Button>
                 </div>
+
+                <p className="text-sm text-background/50 mt-6 font-mono">No credit card required</p>
+              </div>
+
+              {/* Animated ASCII Sphere */}
+              <div className="hidden lg:block opacity-40">
+                <AsciiSphere className="w-[600px] h-[560px]" />
+              </div>
             </div>
-        </section>
-    );
+          </div>
+        </div>
+      </div>
+    </section>
+  );
 }

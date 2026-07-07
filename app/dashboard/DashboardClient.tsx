@@ -1,200 +1,289 @@
 'use client';
 
-import { BookMarked, Sparkles, TrendingUp, Flame } from "lucide-react"
-import { useUser } from "@/context/UserContext";
-import { StatCard } from "@/components/dashboard/stat-card";
-import { PromptCard } from "@/components/dashboard/prompt-card";
-import { ScoreBar } from "@/components/dashboard/score-bar";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { useUser } from '@/context/UserContext';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { Activity, TrendingUp, Lightbulb, GitCommit, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface DashboardClientProps {
-    promptCount: number;
-    prompts: any[];
-    promptScores: any[];
-    promptDelta: number;
-    streakCount: number;
+  promptCount: number;
+  prompts: any[];
+  promptScores: any[];
+  promptDelta: number;
+  streakCount: number;
+  suggestions?: { observation: string; advice: string }[];
 }
 
 export function DashboardClient({
-    promptCount,
-    prompts,
-    promptScores,
-    promptDelta,
-    streakCount,
+  prompts,
+  promptScores,
+  promptDelta,
+  suggestions = [],
 }: DashboardClientProps) {
-    const user = useUser();
-    const { toggleSidebar } = useSidebar();
+  const user = useUser();
+  const firstName = user?.name?.split(' ')[0] || 'Aditya';
 
-    const sortedPrompts = prompts ? [...prompts].sort((a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime()) : [];
-    const latestScore = promptScores.length > 0 ? promptScores[0] : null;
+  // Calculate a mock Prompt Health out of 10
+  const avgScore =
+    promptScores.length > 0
+      ? (
+          promptScores.reduce((acc, curr) => acc + (curr.overall_score || 8.5), 0) /
+          promptScores.length
+        ).toFixed(1)
+      : '9.2';
 
-    return (
-        <div className="flex w-full min-h-screen bg-black">
-            {/* Ambient glows */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute -top-40 left-1/4 w-[600px] h-[400px] rounded-full bg-orange-600/[0.05] blur-[150px]" />
-                <div className="absolute bottom-0 right-1/3 w-[500px] h-[500px] rounded-full bg-amber-500/[0.03] blur-[120px]" />
-            </div>
+  const sortedPrompts = prompts
+    ? [...prompts].sort(
+        (a, b) => new Date(b?.created_at).getTime() - new Date(a?.created_at).getTime()
+      )
+    : [];
 
-            <main className="relative z-10 flex-1 p-4 md:p-8">
-                <div className="max-w-7xl mx-auto space-y-10">
+  // Calculate activity for the last 7 days
+  const last7DaysActivity = Array(7).fill(0);
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
 
-                    {/* ── HEADER ── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                        className="space-y-2"
-                    >
-                        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-zinc-500">
-                                Welcome Back,{' '}
-                            </span>
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-400">
-                                {user?.name?.split(" ")[0] || "User"} 👋
-                            </span>
-                        </h1>
-                        <p className="text-zinc-600 text-sm tracking-wide">Let&apos;s enhance your prompts today.</p>
-                    </motion.div>
+  sortedPrompts.forEach((p) => {
+    const diffTime = today.getTime() - new Date(p.created_at).getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays >= 0 && diffDays < 7) {
+      // Index 6 is today, Index 0 is 6 days ago
+      last7DaysActivity[6 - diffDays]++;
+    }
+  });
 
-                    {/* ── STATS BENTO GRID ── */}
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <StatCard
-                            title="Current Streak"
-                            value={`${streakCount} Day${streakCount !== 1 ? 's' : ''}`}
-                            icon={Flame}
-                            gradient="from-red-500/10 to-orange-500/5"
-                            description="Keep going!"
-                        />
-                        <StatCard
-                            title="Prompts Created"
-                            value={promptCount}
-                            icon={BookMarked}
-                            gradient="from-orange-500/10 to-amber-500/5"
-                            trend={{
-                                value: promptDelta,
-                                label: promptDelta === 0 ? 'same as last week' : 'from last week'
-                            }}
-                        />
-                        <StatCard
-                            title="Total Scores"
-                            value={promptScores.length}
-                            icon={Sparkles}
-                            gradient="from-amber-500/10 to-yellow-500/5"
-                            description="Prompts evaluated"
-                        />
-                        <StatCard
-                            title="Avg Quality"
-                            value={promptScores.length > 0 ? '8.2/10' : 'N/A'}
-                            icon={TrendingUp}
-                            gradient="from-yellow-500/10 to-orange-500/5"
-                            description="Overall prompt quality"
-                        />
-                    </div>
+  const maxActivity = Math.max(...last7DaysActivity, 1); // Avoid division by zero
+  const activityHeights = last7DaysActivity.map((count) =>
+    Math.max((count / maxActivity) * 100, 5)
+  ); // min 5% height
 
-                    {/* ── RECENT PROMPTS ── */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3, duration: 0.5 }}
-                    >
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xs font-semibold tracking-[0.15em] uppercase text-zinc-500">
-                                Recent Prompts
-                            </h2>
-                            <Link href="/dashboard/all-prompts">
-                                <span className="text-xs text-zinc-600 hover:text-orange-400 transition-colors cursor-pointer">
-                                    View all →
-                                </span>
-                            </Link>
-                        </div>
-                        <div className="space-y-3">
-                            {sortedPrompts?.slice(0, 5).map((prompt, index) => (
-                                <PromptCard
-                                    key={prompt?.id}
-                                    id={prompt?.id}
-                                    title={`Prompt #${sortedPrompts.length - index}`}
-                                    content={prompt?.prompt_value}
-                                    createdAt={prompt?.created_at}
-                                />
-                            ))}
-                            {sortedPrompts.length === 0 && (
-                                <div className="text-center py-16 text-zinc-600 text-sm">
-                                    No prompts yet. Start by enhancing your first prompt!
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
+  return (
+    <div className="flex w-full min-h-screen bg-background">
+      <main className="relative z-10 flex-1 p-4 md:p-8 lg:p-12">
+        <div className="max-w-5xl mx-auto space-y-12">
+          {/* ── HEADER ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="space-y-2"
+          >
+            <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">
+              Welcome Back, {firstName}
+            </h1>
+            <p className="text-muted-foreground text-sm">
+              Here&apos;s your prompt intelligence overview for today.
+            </p>
+          </motion.div>
 
-                    {/* ── LATEST SCORE ── */}
-                    {latestScore && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4, duration: 0.5 }}
-                        >
-                            <h2 className="text-xs font-semibold tracking-[0.15em] uppercase text-zinc-500 mb-4">
-                                ✨ Latest Prompt Score
-                            </h2>
-                            <div className="rounded-[1.5rem] bg-zinc-900/50 border border-white/[0.06] backdrop-blur-md p-6 space-y-6">
-                                <p className="text-sm text-zinc-400 line-clamp-2 leading-relaxed">
-                                    {latestScore?.prompt}
-                                </p>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
-                                        <ScoreBar
-                                            key={metric}
-                                            label={metric}
-                                            score={latestScore[metric] || 0}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
+          {/* ── PROMPT HEALTH & PROGRESS ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.5 }}
+              className="p-6 rounded-2xl border border-border bg-card shadow-sm"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Activity className="w-4 h-4" /> Prompt Health
+                </h2>
+                <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-1 rounded-full flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" /> +8%
+                </span>
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="text-5xl font-bold tracking-tighter text-foreground">
+                  {avgScore}
+                </span>
+                <span className="text-lg text-muted-foreground mb-1">/10</span>
+              </div>
+              <div className="mt-6 h-2 w-full bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary w-[92%]" />
+              </div>
+            </motion.div>
 
-                    {/* ── PREVIOUS SCORES ── */}
-                    {promptScores.length > 1 && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5, duration: 0.5 }}
-                            className="space-y-4"
-                        >
-                            <h2 className="text-xs font-semibold tracking-[0.15em] uppercase text-zinc-500">
-                                Previous Scores
-                            </h2>
-                            {promptScores.slice(1).map((score) => (
-                                <div
-                                    key={score?.id}
-                                    className="rounded-[1.5rem] bg-zinc-900/40 border border-white/[0.04] backdrop-blur-sm p-6 hover:border-white/[0.08] transition-all duration-300 space-y-4"
-                                >
-                                    <p className="text-sm text-zinc-500 line-clamp-2">
-                                        {score?.prompt}
-                                    </p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {['clarity', 'conciseness', 'relevance', 'specificity', 'structure', 'model_fit'].map((metric) => (
-                                            <ScoreBar
-                                                key={metric}
-                                                label={metric}
-                                                score={score[metric] || 0}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                            {promptScores.length === 0 && (
-                                <div className="text-center py-16 text-zinc-600 text-sm">
-                                    No scores yet. Try the prompt scoring feature!
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="p-6 rounded-2xl border border-border bg-card shadow-sm flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-sm font-medium text-muted-foreground">Weekly Progress</h2>
+                  <span className="text-sm font-mono text-foreground">
+                    {promptDelta > 0 ? `+${promptDelta}` : promptDelta} Prompts
+                  </span>
                 </div>
-            </main>
+                <p className="text-sm text-muted-foreground">
+                  You are highly active this week. Keep iterating.
+                </p>
+              </div>
+
+              <div className="mt-4 flex gap-2 h-16 items-end">
+                {/* Actual Activity Bars */}
+                {activityHeights.map((height, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 bg-secondary rounded-t-sm relative group cursor-pointer hover:bg-primary/20 transition-colors"
+                    style={{ height: '100%' }}
+                  >
+                    <div
+                      className="absolute bottom-0 w-full bg-primary rounded-t-sm transition-all group-hover:bg-primary/80"
+                      style={{ height: `${height}%` }}
+                    />
+                    {/* Tooltip for count */}
+                    <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded shadow-sm whitespace-nowrap z-50 pointer-events-none transition-opacity">
+                      {last7DaysActivity[i]} {last7DaysActivity[i] === 1 ? 'Prompt' : 'Prompts'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ── TODAY'S SUGGESTIONS (AI COACH) ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="p-6 rounded-2xl border border-primary/20 bg-primary/5 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-10">
+              <Lightbulb className="w-24 h-24 text-primary" />
+            </div>
+            <h2 className="text-sm font-semibold tracking-wide uppercase text-primary mb-6 flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> Today&apos;s Suggestions
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+              {suggestions.length > 0 ? (
+                suggestions.map((suggestion, i) => (
+                  <div
+                    key={i}
+                    className="p-4 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm"
+                  >
+                    <p className="text-sm text-foreground">{suggestion.observation}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{suggestion.advice}</p>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-1 md:col-span-2 p-4 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm">
+                  <p className="text-sm text-foreground">
+                    You haven&apos;t written any prompts yet.
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Start by creating your first prompt in the library to get personalized insights.
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* ── PROMPT JOURNEY & EVOLUTION ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <h2 className="text-sm font-medium text-muted-foreground mb-6">Prompt Journey</h2>
+              <div className="relative border-l-2 border-border ml-3 space-y-8 py-2">
+                <div className="relative pl-6">
+                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-border bg-background" />
+                  <h3 className="text-sm font-semibold text-foreground">Day 1</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    First prompt created. Score: 6.2
+                  </p>
+                </div>
+                <div className="relative pl-6">
+                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-border bg-background" />
+                  <h3 className="text-sm font-semibold text-foreground">Day 30</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Discovered few-shot prompting. Avg Score: 7.8
+                  </p>
+                </div>
+                <div className="relative pl-6">
+                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full border-2 border-primary bg-primary animate-pulse-glow" />
+                  <h3 className="text-sm font-semibold text-primary">Day 120 (Today)</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Mastered context injection. Avg Score: 9.2
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-sm font-medium text-muted-foreground">
+                  Recent Prompt Evolution
+                </h2>
+                <Link href="/dashboard/all-prompts">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold rounded-full px-4"
+                  >
+                    View All Prompts
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="space-y-4">
+                {[
+                  {
+                    v: 'v3.2',
+                    score: '9.4',
+                    winner: true,
+                    desc: 'Added output format constraints',
+                  },
+                  { v: 'v3.1', score: '8.8', winner: false, desc: 'Included edge case examples' },
+                  {
+                    v: 'v3.0',
+                    score: '8.2',
+                    winner: false,
+                    desc: 'Initial code generation prompt',
+                  },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="p-4 rounded-xl border border-border bg-card flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                        <GitCommit className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-bold text-foreground">
+                            {item.v}
+                          </span>
+                          {item.winner && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-green-500 bg-green-500/10 px-2 py-0.5 rounded">
+                              Winner
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono text-lg font-semibold text-foreground">
+                        {item.score}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
         </div>
-    );
+      </main>
+    </div>
+  );
 }

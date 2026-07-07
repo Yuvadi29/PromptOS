@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Copy,
@@ -8,25 +8,18 @@ import {
   ThumbsUpIcon,
   Sparkles,
   Zap,
-  ArrowRight,
   MessageCircleQuestion,
-  SkipForward,
+  Terminal,
+  Loader2,
   CheckCircle2,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSession } from 'next-auth/react';
-import { supabaseAdmin } from '@/lib/supabase';
-import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import { SiOpenai } from 'react-icons/si';
 import { RiGeminiFill } from 'react-icons/ri';
+import { VersionDiff } from '@/components/ui/VersionDiff';
 
 type Phase = 'input' | 'loading-questions' | 'questions' | 'enhancing' | 'result';
-
-// interface QAPair {
-//   question: string;
-//   answer: string;
-// }
 
 const STATUS_MESSAGES = [
   { emoji: '🔍', text: 'Analysing your answers...' },
@@ -40,8 +33,6 @@ export default function PromptEnhancer() {
   const [phase, setPhase] = useState<Phase>('input');
   const [questions, setQuestions] = useState<string[]>([]);
   const [statusIndex, setStatusIndex] = useState(0);
-  const input2Ref = useRef<HTMLTextAreaElement>(null);
-  const { data: session } = useSession();
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackState, setFeedbackState] = useState<null | 'like' | 'dislike'>(null);
   const [formats, setFormats] = useState<{
@@ -49,12 +40,11 @@ export default function PromptEnhancer() {
     markdown?: string;
     json?: any;
   }>({});
-  const [activeTab, setActiveTab] = useState<'raw' | 'markdown' | 'json'>('raw');
-  const [, setPromptType] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'raw' | 'markdown' | 'json' | 'diff'>('raw');
+  const [promptType, setPromptType] = useState<string | null>(null);
   const [prompt, setPrompt] = useState('');
   const [answers, setAnswers] = useState<any[]>([]);
 
-  // Cycle through status messages during enhancing phase
   useEffect(() => {
     if (phase !== 'enhancing') return;
     const interval = setInterval(() => {
@@ -63,9 +53,8 @@ export default function PromptEnhancer() {
     return () => clearInterval(interval);
   }, [phase]);
 
-  // Generate questions from the user's prompt
-  const handleGenerateQuestions = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerateQuestions = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!prompt.trim()) return;
 
     setPhase('loading-questions');
@@ -86,18 +75,17 @@ export default function PromptEnhancer() {
     } catch (error) {
       console.error('Error generating questions:', error);
       toast.error('Failed to generate questions. Enhancing directly...');
-      // Fallback: enhance directly without questions
       handleEnhancePrompt();
     }
   };
 
   const handleEnhancePrompt = async () => {
     if (!prompt || prompt.trim() === '') {
-      alert('Please enter a prompt first');
+      toast.error('Please enter a prompt first');
       return;
     }
 
-    const cleanedAnswers = answers.filter((a) => a.answer && a.answer.trim() !== '');
+    const cleanedAnswers = answers.filter((a) => a && a.trim() !== '');
 
     try {
       setPhase('enhancing');
@@ -115,11 +103,9 @@ export default function PromptEnhancer() {
       const data = await res.json();
 
       if (!res.ok) {
-        setPhase('input'); // Reset to input phase so they can try again
+        setPhase('input');
         if (res.status === 400) {
-          toast.error(
-            'We are having huge traffic currently on the site, please try again after sometime'
-          );
+          toast.error('We are having huge traffic currently, please try again after sometime');
         } else {
           toast.error(data.error || 'Enhance failed');
         }
@@ -128,14 +114,19 @@ export default function PromptEnhancer() {
       setPhase('result');
       setFormats(data.formats);
       setPromptType(data.type);
+      setResponse(data.formats.raw || '');
+      setFeedbackState(null);
 
-      // Smart default tab
       if (data.type === 'image' || data.type === 'video' || data.type === 'data') {
         setActiveTab('json');
       } else if (data.type === 'content' || data.type === 'marketing') {
         setActiveTab('markdown');
       } else {
         setActiveTab('raw');
+      }
+
+      if (data.saved) {
+        toast.success('Prompt Saved!!');
       }
     } catch (err) {
       console.error('Enhance error:', err);
@@ -144,569 +135,405 @@ export default function PromptEnhancer() {
     }
   };
 
-  const handleSubmitAnswers = () => {
-    // const qaPairs: QAPair[] = questions.map((q, i) => ({
-    //   question: q,
-    //   answer: answers[i] || '',
-    // }));
-
-    handleEnhancePrompt();
-  };
-
-  // Skip questions and enhance directly
-  const handleSkipQuestions = () => {
-    handleEnhancePrompt();
-  };
+  const handleSubmitAnswers = () => handleEnhancePrompt();
+  const handleSkipQuestions = () => handleEnhancePrompt();
 
   useEffect(() => {
-    if (input2Ref.current) {
-      input2Ref.current.style.height = 'auto';
-      input2Ref.current.style.height = `${input2Ref.current.scrollHeight}px`;
+    if (response) {
+      const feedbackTimer = setTimeout(() => setShowFeedback(true), 3000);
+      return () => clearTimeout(feedbackTimer);
+    } else {
+      setShowFeedback(false);
     }
   }, [response]);
 
-  useEffect(() => {
-    if (response) {
-      const timer = setTimeout(async () => {
-        try {
-          if (!session?.user?.email) {
-            toast.info('User not authenticated');
-            return;
-          }
-
-          const res = await fetch('/api/save-prompt', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              prompt: response,
-              originalPrompt: prompt,
-            }),
-          });
-
-          if (res.ok) {
-            toast.success('Prompt Saved!!');
-          } else {
-            toast.warning('Failed to Save Prompt');
-          }
-        } catch (error) {
-          console.error('Error Saving the prompt: ', error);
-        }
-      }, 3000);
-
-      const feedbackTimer = setTimeout(() => {
-        setShowFeedback(true);
-      }, 5000);
-
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(feedbackTimer);
-      };
-    }
-  }, [response, session, prompt]);
-
   const handleCopy = () => {
-    if (response) {
-      navigator.clipboard.writeText(response);
+    let text = '';
+    if (activeTab === 'json') text = JSON.stringify(formats.json, null, 2);
+    else text = formats[activeTab as 'raw' | 'markdown'] || '';
+
+    if (text) {
+      navigator.clipboard.writeText(text);
       toast.success('Copied to Clipboard!!');
     }
   };
 
-  const handlePositiveFeedback = async () => {
+  const handleFeedback = async (isPositive: boolean) => {
     try {
-      setFeedbackState('like');
+      setFeedbackState(isPositive ? 'like' : 'dislike');
       const storeFeedback = await fetch('/api/feedback', {
         method: 'POST',
-        body: JSON.stringify({ response, feedback: true }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        body: JSON.stringify({ response, feedback: isPositive }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
-      if (storeFeedback.ok) {
-        toast.success('Thank you for your feedback!');
-      } else {
-        toast.error('Feedback can only be given once per prompt.');
-      }
+      if (storeFeedback.ok) toast.success('Thank you for your feedback!');
+      else toast.error('Feedback can only be given once per prompt.');
     } catch (error) {
       console.error('Error Storing Feedback: ', error);
       toast.error('Something went wrong.');
     }
   };
 
-  const handleNegativeFeedback = async () => {
-    try {
-      setFeedbackState('dislike');
+  const allAnswered = answers.length > 0 && answers.every((a) => a && a.trim().length > 0);
 
-      const storeFeedback = await fetch('/api/feedback', {
-        method: 'POST',
-        body: JSON.stringify({ response, feedback: false }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (storeFeedback.ok) {
-        toast.success('Thank you for your feedback!');
-      } else {
-        toast.error('Feedback can only be given once per prompt.');
-      }
-    } catch (error) {
-      console.error('Error Storing Feedback: ', error);
-      toast.error('Something went wrong.');
+  // Dynamic Explanation based on Type
+  const getTypeExplanation = (type: string | null) => {
+    switch (type) {
+      case 'image':
+        return 'We formatted this response optimally for Image Generation models (like Midjourney or DALL-E) to ensure vivid details and styles are prioritized.';
+      case 'video':
+        return 'We formatted this response optimally for Video Generation models (like Sora or Runway) emphasizing scene descriptions, camera movements, and lighting.';
+      case 'data':
+      case 'agent':
+        return 'We formatted this response as a strict JSON structure to ensure parsability by your backend agents or APIs.';
+      case 'content':
+      case 'marketing':
+        return 'We structured this response in Markdown format, tailored perfectly for drafting blogs, ads, or rich text content with headings and bullet points.';
+      default:
+        return 'This response was enhanced for clarity, specificity, and constraint management to ensure the best possible output from standard LLMs.';
     }
   };
-
-  const allAnswered = answers.every((a) => a.trim().length > 0);
-
-  // ─── LOADING QUESTIONS PHASE ──────────────────────────────────
-  if (phase === 'loading-questions') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-5"
-        >
-          <div className="relative w-20 h-20">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 opacity-20 animate-ping" />
-            <div className="absolute inset-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 opacity-30 animate-pulse" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <MessageCircleQuestion className="w-8 h-8 text-orange-400" />
-            </div>
-          </div>
-          <p className="text-zinc-300 text-lg font-medium animate-pulse">
-            Generating questions to understand your needs...
-          </p>
-          <p className="text-zinc-500 text-sm">This will help create a much better prompt</p>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // ─── ENHANCING PHASE ──────────────────────────────────────────
-  if (phase === 'enhancing') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <div className="flex flex-col items-center gap-6 max-w-md">
-          {/* Animated orb */}
-          <div className="relative w-24 h-24">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 opacity-20 animate-ping" />
-            <div className="absolute inset-1 rounded-full bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 opacity-30 animate-pulse" />
-            <motion.div
-              className="absolute inset-3 rounded-full bg-gradient-to-br from-orange-500 to-amber-500"
-              animate={{ scale: [1, 1.1, 1], rotate: [0, 180, 360] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-          </div>
-
-          {/* Cycling status messages */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={statusIndex}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="text-center space-y-2"
-            >
-              <p className="text-2xl">{STATUS_MESSAGES[statusIndex].emoji}</p>
-              <p className="text-lg font-medium text-zinc-200">
-                {STATUS_MESSAGES[statusIndex].text}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Progress dots */}
-          <div className="flex gap-2 mt-4">
-            {STATUS_MESSAGES.map((_, i) => (
-              <div
-                key={i}
-                className={`w-2 h-2 rounded-full transition-all duration-500 ${
-                  i === statusIndex
-                    ? 'bg-orange-400 scale-125'
-                    : i < statusIndex
-                      ? 'bg-orange-400/50'
-                      : 'bg-zinc-700'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <>
-      <div className="flex min-h-screen w-full items-center justify-center bg-zinc-950 p-6 relative">
-        <div className="w-full max-w-4xl space-y-8">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center space-y-2"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 mb-4">
-              <Sparkles className="w-4 h-4 text-orange-400" />
-              <span className="text-sm font-medium text-orange-300">AI-Powered Enhancement</span>
+    <div className="flex flex-col min-h-screen w-full bg-background pt-24 px-4 sm:px-6 pb-6 relative">
+      {/* Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none z-0" />
+
+      <div className="w-full max-w-7xl mx-auto flex flex-col min-h-[calc(100vh-8rem)] relative z-10">
+        {/* Pipeline Progress Indicator */}
+        <div className="flex items-center justify-between mb-8 px-4 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-[20px] shadow-lg">
+          <div className="flex items-center gap-4 w-full relative">
+            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-border -translate-y-1/2 z-0" />
+
+            <div className="flex-1 flex justify-center z-10">
+              <div
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-500 ${phase === 'input' ? 'bg-primary/20 text-primary border border-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]' : 'bg-card text-foreground border border-border'}`}
+              >
+                1. Input Prompt
+              </div>
             </div>
-            <h1 className="text-4xl font-bold">
-              <span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
-                Prompt Enhancer
-              </span>
-            </h1>
-            <p className="text-zinc-400">
-              {phase === 'input' &&
-                'Transform your prompts into powerful, model-ready instructions'}
-              {phase === 'questions' &&
-                'Answer these questions so we can craft the perfect prompt for you'}
-              {phase === 'result' && "Here's your enhanced prompt"}
-            </p>
-          </motion.div>
 
-          {/* Step Indicator */}
-          {phase !== 'result' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center gap-3"
+            <div className="flex-1 flex justify-center z-10">
+              <div
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-500 ${['loading-questions', 'questions'].includes(phase) ? 'bg-primary/20 text-primary border border-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]' : 'bg-card text-muted-foreground border border-border'}`}
+              >
+                2. Clarification
+              </div>
+            </div>
+
+            <div className="flex-1 flex justify-center z-10">
+              <div
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-500 ${['enhancing', 'result'].includes(phase) ? 'bg-primary/20 text-primary border border-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]' : 'bg-card text-muted-foreground border border-border'}`}
+              >
+                3. Enhanced Output
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Workspace Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-[600px]">
+          {/* INPUT & QUESTIONS (Left Column) */}
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            {/* INPUT PANEL */}
+            <div
+              className={`flex flex-col min-h-[250px] rounded-[24px] border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden shadow-lg transition-all duration-500 ${phase === 'input' ? 'ring-1 ring-primary/50' : ''}`}
             >
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  phase === 'input'
-                    ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
-                }`}
-              >
-                {phase !== 'input' ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-green-400" />
-                ) : (
-                  <span className="w-4 h-4 rounded-full bg-orange-500 text-white text-[10px] flex items-center justify-center font-bold">
-                    1
-                  </span>
-                )}
-                Enter Prompt
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  phase === 'questions'
-                    ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30'
-                    : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50'
-                }`}
-              >
-                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">
-                  2
+              <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                  <Terminal className="w-4 h-4" /> Raw Prompt Input
                 </span>
-                Answer Questions
-              </div>
-              <ArrowRight className="w-3.5 h-3.5 text-zinc-600" />
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-zinc-800/50 text-zinc-500 border border-zinc-700/50">
-                <span className="w-4 h-4 rounded-full bg-zinc-600 text-white text-[10px] flex items-center justify-center font-bold">
-                  3
-                </span>
-                Enhanced Prompt
-              </div>
-            </motion.div>
-          )}
-
-          {/* Main Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-2xl bg-gradient-to-b from-zinc-900 to-zinc-900/50 border border-zinc-800 p-8 space-y-6"
-          >
-            {/* ─── INPUT PHASE ──────────────────────────────────── */}
-            {phase === 'input' && (
-              <form onSubmit={handleGenerateQuestions} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-zinc-300">Your Prompt</label>
-                  <textarea
-                    className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl p-4 text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:outline-none resize-none transition-all"
-                    rows={4}
-                    placeholder="Enter your prompt here..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={!prompt.trim()}
-                  className="w-full group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/50 hover:shadow-xl hover:shadow-orange-500/60"
-                >
-                  <Zap className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                  Enhance Prompt
-                </Button>
-              </form>
-            )}
-
-            {/* ─── QUESTIONS PHASE ──────────────────────────────── */}
-            {phase === 'questions' && (
-              <div className="space-y-5">
-                <div className="flex items-center gap-3 pb-2 border-b border-zinc-800">
-                  <MessageCircleQuestion className="w-5 h-5 text-orange-400" />
-                  <h2 className="text-lg font-semibold text-zinc-200">
-                    Help us understand your needs
-                  </h2>
-                </div>
-
-                {questions.map((question, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="space-y-2"
+                {phase !== 'input' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setPhase('input');
+                      setQuestions([]);
+                      setFormats({});
+                      setResponse('');
+                      setFeedbackState(null);
+                    }}
+                    className="h-7 text-xs px-3"
                   >
-                    <label className="flex items-start gap-3 text-sm font-medium text-zinc-300">
-                      <span className="shrink-0 w-6 h-6 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center text-xs font-bold mt-0.5">
-                        {index + 1}
-                      </span>
-                      {question}
-                    </label>
-                    <textarea
-                      className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl p-3 pl-12 text-white placeholder:text-zinc-500 focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:outline-none resize-none transition-all text-sm"
-                      rows={2}
-                      placeholder="Type your answer..."
-                      value={answers[index]}
-                      onChange={(e) => {
-                        const newAnswers = [...answers];
-                        newAnswers[index] = e.target.value;
-                        setAnswers(newAnswers);
-                      }}
-                    />
-                  </motion.div>
-                ))}
+                    Edit
+                  </Button>
+                )}
+              </div>
+              <div className="flex-1 p-5 relative">
+                <textarea
+                  className="w-full h-full bg-transparent resize-none outline-none text-foreground leading-relaxed placeholder:text-muted-foreground/40 font-mono text-sm"
+                  placeholder="What do you want the AI to do? E.g., 'write an email to client about delay'..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  disabled={phase !== 'input'}
+                />
+              </div>
+              {phase === 'input' && (
+                <div className="p-4 border-t border-white/10 bg-black/20">
+                  <Button
+                    onClick={(e) => handleGenerateQuestions(e as any)}
+                    disabled={!prompt.trim()}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 rounded-xl cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2 " /> Enhance Prompt
+                  </Button>
+                </div>
+              )}
+            </div>
 
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6 }}
-                  className="flex flex-col sm:flex-row gap-3 pt-4"
-                >
+            {/* CLARIFICATION PANEL */}
+            <div
+              className={`flex flex-col flex-1 min-h-[300px] rounded-[24px] border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden shadow-lg transition-all duration-500 ${['loading-questions', 'questions'].includes(phase) ? 'ring-1 ring-primary/50' : 'opacity-60'}`}
+            >
+              <div className="p-5 border-b border-white/10 flex items-center justify-between">
+                <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-2">
+                  <MessageCircleQuestion className="w-4 h-4" /> Context Clarification
+                </span>
+              </div>
+              <div className="flex-1 p-5 overflow-y-auto">
+                {phase === 'input' && (
+                  <div className="h-full flex items-center justify-center text-muted-foreground/40 text-xs font-mono text-center">
+                    Awaiting prompt...
+                  </div>
+                )}
+                {phase === 'loading-questions' && (
+                  <div className="h-full flex flex-col items-center justify-center gap-3 text-primary">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span className="font-mono text-xs animate-pulse">
+                      Analyzing intent for questions...
+                    </span>
+                  </div>
+                )}
+                {phase === 'questions' && (
+                  <div className="space-y-5">
+                    {questions.map((q, i) => (
+                      <div key={i} className="space-y-2">
+                        <label className="text-xs font-medium text-foreground/80 block">{q}</label>
+                        <textarea
+                          className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none resize-none font-mono"
+                          rows={2}
+                          placeholder="Type your answer..."
+                          value={answers[i]}
+                          onChange={(e) => {
+                            const newAnswers = [...answers];
+                            newAnswers[i] = e.target.value;
+                            setAnswers(newAnswers);
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {['enhancing', 'result'].includes(phase) && questions.length > 0 && (
+                  <div className="space-y-4 opacity-70 pointer-events-none">
+                    {questions.map((q, i) => (
+                      <div key={i} className="p-3 bg-black/20 rounded-xl border border-white/5">
+                        <p className="text-[11px] text-muted-foreground mb-1">{q}</p>
+                        <p className="text-sm text-foreground font-mono">
+                          {answers[i] || 'Skipped'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {phase === 'questions' && (
+                <div className="p-4 border-t border-white/10 bg-black/20 flex gap-2">
                   <Button
                     onClick={handleSubmitAnswers}
                     disabled={!allAnswered}
-                    className="flex-1 group relative px-8 py-6 text-lg font-semibold bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all duration-300 shadow-lg shadow-orange-500/50 hover:shadow-xl hover:shadow-orange-500/60 disabled:opacity-50 disabled:shadow-none"
+                    className="flex-1 bg-primary hover:bg-primary/90 rounded-xl font-semibold"
                   >
-                    <Sparkles className="w-5 h-5 mr-2 group-hover:rotate-12 transition-transform" />
-                    Generate Enhanced Prompt
+                    Generate
                   </Button>
-
                   <Button
                     variant="outline"
                     onClick={handleSkipQuestions}
-                    className="px-6 py-6 text-sm font-medium bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-zinc-400 hover:text-white transition-all"
+                    className="flex-1 rounded-xl"
                   >
-                    <SkipForward className="w-4 h-4 mr-2" />
-                    Skip Questions
+                    Skip
                   </Button>
-                </motion.div>
-
-                {!allAnswered && (
-                  <p className="text-xs text-zinc-500 text-center">
-                    Answer all questions to generate the best possible prompt, or skip to enhance
-                    directly
-                  </p>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2 mb-4">
-              {formats.raw && (
-                <button
-                  onClick={() => setActiveTab('raw')}
-                  className={`px-3 py-1 rounded-md text-sm ${
-                    activeTab === 'raw' ? 'bg-orange-500 text-black' : 'bg-zinc-800 text-zinc-300'
-                  }`}
-                >
-                  Raw
-                </button>
-              )}
-
-              {formats.markdown && (
-                <button
-                  onClick={() => setActiveTab('markdown')}
-                  className={`px-3 py-1 rounded-md text-sm ${
-                    activeTab === 'markdown'
-                      ? 'bg-orange-500 text-black'
-                      : 'bg-zinc-800 text-zinc-300'
-                  }`}
-                >
-                  Markdown
-                </button>
-              )}
-
-              {formats.json && (
-                <button
-                  onClick={() => setActiveTab('json')}
-                  className={`px-3 py-1 rounded-md text-sm ${
-                    activeTab === 'json' ? 'bg-orange-500 text-black' : 'bg-zinc-800 text-zinc-300'
-                  }`}
-                >
-                  JSON
-                </button>
+                </div>
               )}
             </div>
-            {/* ─── RESULT PHASE ─────────────────────────────────── */}
-            {phase === 'result' && (
-              <>
-                {/* {response.slice(7) && ( */}
-                {formats.raw && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-zinc-300">Enhanced Prompt</label>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleCopy}
-                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                      >
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copy
-                      </Button>
-                    </div>
-                    <div className="relative bg-[#0B0F17] border border-[#1E2633] rounded-lg p-4 text-sm overflow-auto max-h-[400px]">
-                      <button
-                        onClick={() => {
-                          let text = '';
+          </div>
 
-                          if (activeTab === 'json') {
-                            text = JSON.stringify(formats.json, null, 2);
-                          } else {
-                            text = formats[activeTab] || '';
-                          }
+          {/* OUTPUT PANEL (Right Column) */}
+          <div
+            className={`lg:col-span-7 flex flex-col rounded-[24px] border border-white/10 bg-black/40 backdrop-blur-xl overflow-hidden shadow-2xl transition-all duration-500 ${['enhancing', 'result'].includes(phase) ? 'ring-1 ring-primary/50' : 'opacity-60'}`}
+          >
+            <div className="p-5 border-b border-white/10 flex items-center justify-between">
+              <span className="font-mono text-[11px] font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                <Zap className="w-4 h-4" /> Enhanced Output
+              </span>
+              {phase === 'enhancing' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Generating
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
+                </div>
+              )}
+              {phase === 'result' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" /> Complete
+                  </span>
+                </div>
+              )}
+            </div>
 
-                          navigator.clipboard.writeText(text);
-                        }}
-                        className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-[#1A2230] hover:bg-[#2A3240]"
-                      >
-                        Copy
-                      </button>
+            <div className="flex-1 p-5 overflow-y-auto relative flex flex-col">
+              {['input', 'loading-questions', 'questions'].includes(phase) && (
+                <div className="h-full flex items-center justify-center text-muted-foreground/30 text-sm font-mono text-center">
+                  Enhanced output will appear here...
+                </div>
+              )}
 
-                      <pre className="whitespace-pre-wrap text-orange-200 text-xs">
-                        {activeTab === 'json'
-                          ? JSON.stringify(formats.json, null, 2)
-                          : formats[activeTab]}
-                      </pre>
-                    </div>
+              {phase === 'enhancing' && (
+                <div className="h-full flex flex-col items-center justify-center gap-4 text-primary">
+                  <div className="w-12 h-12 rounded-full border-t-2 border-primary animate-spin" />
+                  <span className="font-mono text-sm animate-pulse">
+                    {STATUS_MESSAGES[statusIndex].text}
+                  </span>
+                </div>
+              )}
 
-                    <div
-                      ref={input2Ref as unknown as React.RefObject<HTMLDivElement>}
-                      className="w-full bg-zinc-800/50 text-white p-6 rounded-xl border border-zinc-700 prose prose-invert max-w-none"
-                    >
-                      <ReactMarkdown>{response}</ReactMarkdown>
-                    </div>
-
-                    {/* Quick Actions */}
-                    <div className="flex flex-wrap gap-3 justify-center pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          handleCopy();
-                          toast.success('Prompt copied! Opening ChatGPT...');
-                          window.open('https://chat.openai.com/chat', '_blank');
-                        }}
-                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                      >
-                        <SiOpenai className="mr-2" fill="#0BA37F" />
-                        Open in ChatGPT
-                      </Button>
-
-                      <svg width="0" height="0">
-                        <linearGradient id="gemini-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop stopColor="#AF78B2" offset="0%" />
-                          <stop stopColor="#D96E6A" offset="100%" />
-                        </linearGradient>
-                      </svg>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          handleCopy();
-                          toast.success('Prompt copied! Opening Gemini...');
-                          window.open('https://gemini.google.com/app', '_blank');
-                        }}
-                        className="bg-zinc-800/50 border-zinc-700 hover:bg-zinc-700/50 text-white"
-                      >
-                        <RiGeminiFill
-                          className="mr-2"
-                          style={{ fill: 'url(#gemini-gradient)' }}
-                          size={18}
-                        />
-                        Open in Gemini
-                      </Button>
-                    </div>
-
-                    {/* Start Over */}
-                    <div className="flex justify-center pt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setPhase('input');
-                          setPrompt('');
-                          setResponse('');
-                          setQuestions([]);
-                          setAnswers(['', '', '', '', '']);
-                          setShowFeedback(false);
-                          setFeedbackState(null);
-                        }}
-                        className="text-zinc-500 hover:text-zinc-300"
-                      >
-                        ← Enhance another prompt
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Feedback */}
-                <AnimatePresence>
-                  {showFeedback && (
+              {phase === 'result' && (
+                <div className="flex-1 flex flex-col h-full space-y-4">
+                  {/* Format explanation banner */}
+                  {promptType && (
                     <motion.div
-                      key="feedback"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.4 }}
-                      className="flex flex-col items-center space-y-3 bg-zinc-800/50 p-6 rounded-xl border border-zinc-700"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 rounded-lg border border-primary/20 bg-primary/10 flex items-start gap-2"
                     >
-                      <p className="text-sm text-zinc-300">Was this enhancement helpful?</p>
-                      <div className="flex gap-6">
-                        <ThumbsUpIcon
-                          size={30}
-                          className={`${feedbackState === 'like' ? 'text-green-400' : 'text-zinc-500'} hover:text-green-400 hover:scale-110 transition cursor-pointer`}
-                          onClick={handlePositiveFeedback}
-                          fill={feedbackState === 'like' ? 'currentColor' : 'none'}
-                        />
-                        <ThumbsDownIcon
-                          size={30}
-                          className={`${feedbackState === 'dislike' ? 'text-red-400' : 'text-zinc-500'} hover:text-red-400 hover:scale-110 transition cursor-pointer`}
-                          onClick={handleNegativeFeedback}
-                          fill={feedbackState === 'dislike' ? 'currentColor' : 'none'}
-                        />
+                      <Sparkles className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs text-primary font-medium">
+                          {getTypeExplanation(promptType)}
+                        </p>
                       </div>
                     </motion.div>
                   )}
-                </AnimatePresence>
-              </>
+
+                  {/* Tabs */}
+                  <div className="flex flex-wrap gap-2">
+                    {formats.raw && (
+                      <button
+                        onClick={() => setActiveTab('raw')}
+                        className={`text-[11px] uppercase tracking-wider font-bold px-4 py-1.5 rounded-full transition-colors ${activeTab === 'raw' ? 'bg-primary text-primary-foreground' : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-white/5'}`}
+                      >
+                        Raw
+                      </button>
+                    )}
+                    {formats.markdown && (
+                      <button
+                        onClick={() => setActiveTab('markdown')}
+                        className={`text-[11px] uppercase tracking-wider font-bold px-4 py-1.5 rounded-full transition-colors ${activeTab === 'markdown' ? 'bg-primary text-primary-foreground' : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-white/5'}`}
+                      >
+                        Markdown
+                      </button>
+                    )}
+                    {formats.json && (
+                      <button
+                        onClick={() => setActiveTab('json')}
+                        className={`text-[11px] uppercase tracking-wider font-bold px-4 py-1.5 rounded-full transition-colors ${activeTab === 'json' ? 'bg-primary text-primary-foreground' : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-white/5'}`}
+                      >
+                        JSON
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setActiveTab('diff')}
+                      className={`text-[11px] uppercase tracking-wider font-bold px-4 py-1.5 rounded-full transition-colors ${activeTab === 'diff' ? 'bg-primary text-primary-foreground' : 'bg-white/5 text-muted-foreground hover:bg-white/10 border border-white/5'}`}
+                    >
+                      Diff
+                    </button>
+                  </div>
+
+                  {/* Editor View */}
+                  {activeTab === 'diff' ? (
+                    <div className="flex-1 bg-black/40 border border-white/10 rounded-2xl shadow-inner overflow-hidden min-h-[300px]">
+                      <VersionDiff oldText={prompt} newText={formats.raw || response || ''} />
+                    </div>
+                  ) : (
+                    <div className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-5 font-mono text-sm text-foreground overflow-auto whitespace-pre-wrap shadow-inner relative group min-h-[300px]">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        onClick={handleCopy}
+                        className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 border border-white/10"
+                      >
+                        <Copy className="w-4 h-4 text-white" />
+                      </Button>
+
+                      {activeTab === 'json'
+                        ? JSON.stringify(formats.json, null, 2)
+                        : formats[activeTab as 'raw' | 'markdown']}
+                    </div>
+                  )}
+
+                  {/* Feedback Box */}
+                  <AnimatePresence>
+                    {showFeedback && phase === 'result' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="bg-white/5 rounded-xl p-4 border border-white/10 flex items-center justify-between shadow-lg"
+                      >
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Was this enhanced prompt helpful?
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleFeedback(true)}
+                            className={`rounded-lg hover:bg-green-500/20 hover:text-green-400 ${feedbackState === 'like' ? 'text-green-500 bg-green-500/20' : 'text-muted-foreground'}`}
+                          >
+                            <ThumbsUpIcon className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleFeedback(false)}
+                            className={`rounded-lg hover:bg-red-500/20 hover:text-red-400 ${feedbackState === 'dislike' ? 'text-red-500 bg-red-500/20' : 'text-muted-foreground'}`}
+                          >
+                            <ThumbsDownIcon className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Actions */}
+            {phase === 'result' && (
+              <div className="p-5 border-t border-white/10 bg-black/20 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => window.open('https://chat.openai.com', '_blank')}
+                  className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 rounded-xl font-medium"
+                >
+                  <SiOpenai className="mr-2" /> Try in ChatGPT
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open('https://gemini.google.com', '_blank')}
+                  className="flex-1 bg-white/5 border-white/10 hover:bg-white/10 rounded-xl font-medium text-primary"
+                >
+                  <RiGeminiFill className="mr-2" /> Try in Gemini
+                </Button>
+              </div>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

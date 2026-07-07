@@ -72,7 +72,7 @@ You must also include one brief and actionable suggestion for improvement (if an
 `;
 
     const completion = await openrouter.chat.completions.create({
-      model: 'google/gemma-4-31b-it:free',
+      model: 'openai/gpt-oss-120b',
       messages: [{ role: 'user', content: `${systemPrompt}\n\nUser Prompt:\n${prompt}` }],
     });
 
