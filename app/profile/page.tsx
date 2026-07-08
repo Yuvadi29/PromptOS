@@ -74,7 +74,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (status === 'unauthenticated' || !user?.email) {
-      setLoading(false);
+      window.location.href = '/';
       return;
     }
 

@@ -19,9 +19,9 @@ function SessionSync() {
   return null;
 }
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children, session }: { children: React.ReactNode; session?: any }) {
   return (
-    <SessionProvider>
+    <SessionProvider session={session} refetchOnWindowFocus={false} refetchWhenOffline={false}>
       <SessionSync />
       {children}
     </SessionProvider>

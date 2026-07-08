@@ -48,7 +48,11 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession(authOptions);
   return (
     <html
       lang="en"
@@ -76,9 +80,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} ${GeistPixelLine.variable} font-sans antialiased`}
+        suppressHydrationWarning
       >
         <ClientShell>
-          <Providers>
+          <Providers session={session}>
             <Toaster position="top-right" richColors />
             {children}
             <Analytics />
