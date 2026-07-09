@@ -11,13 +11,28 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user }) {
-      // Save user info to supabase manually
+      let country = 'Unknown';
+      let region = 'Unknown';
+      let city = 'Unknown';
+      try {
+        const { headers } = await import('next/headers');
+        const headersList = await headers();
+        country = headersList.get('x-vercel-ip-country') || 'Unknown';
+        region = headersList.get('x-vercel-ip-country-region') || 'Unknown';
+        city = headersList.get('x-vercel-ip-city') || 'Unknown';
+      } catch (e) {
+        console.warn('Failed to parse request headers in signIn callback:', e);
+      }
+      // Save user info and location to supabase manually
       const { error } = await supabaseAdmin.from('users').upsert({
         id: String(user?.id), // Enforce string coercion just to be doubly safe
         name: user?.name,
         email: user?.email,
         image: user?.image,
         username: user?.name?.split(' ')[0],
+        country,
+        region,
+        city,
       });
 
       if (error) {

@@ -6,6 +6,8 @@ import SideBar from '@/components/SideBar';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+import { supabaseAdmin } from '@/lib/supabase';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -22,6 +24,31 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!session) {
     redirect('/');
+  }
+
+  // Lazy-backfill user location details if they are missing
+  if (session.user?.email) {
+    try {
+      const { data: dbUser } = await supabaseAdmin
+        .from('users')
+        .select('country')
+        .eq('email', session.user.email)
+        .single();
+
+      if (dbUser && !dbUser.country) {
+        const headersList = await headers();
+        const country = headersList.get('x-vercel-ip-country') || 'Unknown';
+        const region = headersList.get('x-vercel-ip-country-region') || 'Unknown';
+        const city = headersList.get('x-vercel-ip-city') || 'Unknown';
+
+        await supabaseAdmin
+          .from('users')
+          .update({ country, region, city })
+          .eq('email', session.user.email);
+      }
+    } catch (err) {
+      console.warn('Failed to lazy-backfill user location details:', err);
+    }
   }
 
   const user = session?.user
