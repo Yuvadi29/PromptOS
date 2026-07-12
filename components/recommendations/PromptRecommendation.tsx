@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import debounce from "lodash/debounce";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from 'react';
+import debounce from 'lodash/debounce';
+import { supabase } from '@/lib/supabase';
 
 interface Props {
   promptId?: string; // filled after enhancement
@@ -16,29 +16,39 @@ export default function PromptRecommendations({ promptId, userId, queryPrompt }:
     try {
       // Live suggestions while typing
       if (queryPrompt && queryPrompt.trim() && !promptId) {
-        const { data } = await supabase.rpc("recommend_prompts", { query_prompt_text: queryPrompt, match_count: 5 });
+        const { data } = await supabase.rpc('recommend_prompts', {
+          query_prompt_text: queryPrompt,
+          match_count: 5,
+        });
         setPromptRecs(data || []);
       }
 
       // Saved-prompt based suggestions
       if (promptId) {
-        const { data } = await supabase.rpc("recommend_prompts", { query_prompt_id: promptId, match_count: 5 });
+        const { data } = await supabase.rpc('recommend_prompts', {
+          query_prompt_id: promptId,
+          match_count: 5,
+        });
         setPromptRecs(data || []);
       }
 
       // Personalized for user
       if (userId) {
-        const { data } = await supabase.rpc("recommend_for_user", { user_uuid: userId, match_count: 5 });
+        const { data } = await supabase.rpc('recommend_for_user', {
+          user_uuid: userId,
+          match_count: 5,
+        });
         setUserRecs(data || []);
       }
     } catch (err) {
-      console.error("Error fetching recommendations:", err);
+      console.error('Error fetching recommendations:', err);
     }
   }, 300);
 
   useEffect(() => {
     fetchRecs();
     return fetchRecs.cancel;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptId, userId, queryPrompt]);
 
   return (
@@ -48,9 +58,16 @@ export default function PromptRecommendations({ promptId, userId, queryPrompt }:
           <h3 className="text-lg font-semibold mb-3">Suggestions</h3>
           <ul className="space-y-3">
             {promptRecs.map((rec) => (
-              <li key={rec.id} className="p-3 rounded-xl shadow bg-neutral-900 cursor-pointer hover:bg-neutral-800">
+              <li
+                key={rec.id}
+                className="p-3 rounded-xl shadow bg-neutral-900 cursor-pointer hover:bg-neutral-800"
+              >
                 <p className="text-sm text-gray-300">{rec.prompt}</p>
-                {rec.similarity && <span className="text-xs text-gray-500">Similarity: {(rec.similarity * 100).toFixed(1)}%</span>}
+                {rec.similarity && (
+                  <span className="text-xs text-gray-500">
+                    Similarity: {(rec.similarity * 100).toFixed(1)}%
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -62,9 +79,16 @@ export default function PromptRecommendations({ promptId, userId, queryPrompt }:
           <h3 className="text-lg font-semibold mb-3">Recommended for you</h3>
           <ul className="space-y-3">
             {userRecs.map((rec) => (
-              <li key={rec.id} className="p-3 rounded-xl shadow bg-neutral-900 cursor-pointer hover:bg-neutral-800">
+              <li
+                key={rec.id}
+                className="p-3 rounded-xl shadow bg-neutral-900 cursor-pointer hover:bg-neutral-800"
+              >
                 <p className="text-sm text-gray-300">{rec.prompt}</p>
-                {rec.similarity && <span className="text-xs text-gray-500">Similarity: {(rec.similarity * 100).toFixed(1)}%</span>}
+                {rec.similarity && (
+                  <span className="text-xs text-gray-500">
+                    Similarity: {(rec.similarity * 100).toFixed(1)}%
+                  </span>
+                )}
               </li>
             ))}
           </ul>

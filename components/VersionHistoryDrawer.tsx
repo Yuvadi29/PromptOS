@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, History } from "lucide-react";
+import React, { useEffect, useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Loader2, ArrowLeft, History } from 'lucide-react';
 
 type VersionStat = {
   prompt_version_id: string;
@@ -32,51 +32,48 @@ export default function VersionHistoryDrawer({
   const [loading, setLoading] = useState(false);
   const [reverting, setReverting] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open) fetchVersions();
-  }, [open, promptId]);
-
-  async function fetchVersions() {
+  const fetchVersions = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/prompt/${promptId}/versions`);
       const data = await res.json();
       setVersions(data || []);
     } catch (err) {
-      console.error("Error fetching versions →", err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
-  }
+  }, [promptId]);
+
+  useEffect(() => {
+    if (open) fetchVersions();
+  }, [open, fetchVersions]);
 
   async function handleRevert(versionId: string) {
     const confirmed = confirm(
-      "This will create a NEW version that reverts to the selected version.\nDo you want to continue?"
+      'This will create a NEW version that reverts to the selected version.\nDo you want to continue?'
     );
     if (!confirmed) return;
 
     setReverting(versionId);
 
     try {
-      const res = await fetch(
-        `/api/prompt/${promptId}/versions/${versionId}/revert`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-        }
-      );
+      const res = await fetch(`/api/prompt/${promptId}/versions/${versionId}/revert`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+      });
       const data = await res.json();
 
       if (res.ok) {
-        alert("Reverted — new version created.");
+        alert('Reverted — new version created.');
         await fetchVersions();
         onRevertSuccess?.(data.new_version?.id);
       } else {
-        alert(data.error || "Revert failed");
+        alert(data.error || 'Revert failed');
       }
     } catch (err) {
       console.error(err);
-      alert("Something went wrong while reverting.");
+      alert('Something went wrong while reverting.');
     } finally {
       setReverting(null);
     }
@@ -87,7 +84,7 @@ export default function VersionHistoryDrawer({
       className={`fixed top-0 right-0 h-full w-[420px] 
       bg-[#000000] border-l border-[#1E2633] shadow-2xl 
       transform transition-transform duration-300 z-[1000]
-      ${open ? "translate-x-0" : "translate-x-full"}`}
+      ${open ? 'translate-x-0' : 'translate-x-full'}`}
     >
       {/* HEADER */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-orange-400/65">
@@ -127,42 +124,27 @@ export default function VersionHistoryDrawer({
                 <div className="flex justify-between items-start">
                   <div className="text-slate-300">
                     <p className="font-medium text-primary">
-                      Version{" "}
-                      <span className="text-primary">
-                        v{v.version_number}
-                      </span>
+                      Version <span className="text-primary">v{v.version_number}</span>
                     </p>
                     <p className="text-xs text-slate-500">
                       {new Date(v.created_at).toLocaleString()}
                     </p>
-                    {v.reason && (
-                      <p className="text-xs text-slate-500 mt-1 italic">
-                        {v.reason}
-                      </p>
-                    )}
+                    {v.reason && <p className="text-xs text-slate-500 mt-1 italic">{v.reason}</p>}
                   </div>
                 </div>
 
                 {/* Stats */}
                 <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                   <div className="p-2 rounded bg-[#161D29]">
-                    <p className="text-[11px] uppercase text-slate-500">
-                      Runs
-                    </p>
+                    <p className="text-[11px] uppercase text-slate-500">Runs</p>
                     <p className="font-semibold text-slate-200">{v.runs}</p>
                   </div>
                   <div className="p-2 rounded bg-[#161D29]">
-                    <p className="text-[11px] uppercase text-slate-500">
-                      Score
-                    </p>
-                    <p className="font-semibold text-slate-200">
-                      {v.avg_score ?? 0}
-                    </p>
+                    <p className="text-[11px] uppercase text-slate-500">Score</p>
+                    <p className="font-semibold text-slate-200">{v.avg_score ?? 0}</p>
                   </div>
                   <div className="p-2 rounded bg-[#161D29]">
-                    <p className="text-[11px] uppercase text-slate-500">
-                      Thumbs
-                    </p>
+                    <p className="text-[11px] uppercase text-slate-500">Thumbs</p>
                     <p className="font-semibold text-slate-200">
                       👍 {v.thumbs_up} / 👎 {v.thumbs_down}
                     </p>
@@ -176,7 +158,7 @@ export default function VersionHistoryDrawer({
                     size="sm"
                     onClick={() =>
                       window.dispatchEvent(
-                        new CustomEvent("openCompare", {
+                        new CustomEvent('openCompare', {
                           detail: v.prompt_version_id,
                         })
                       )
@@ -195,7 +177,7 @@ export default function VersionHistoryDrawer({
                     {reverting === v.prompt_version_id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Revert"
+                      'Revert'
                     )}
                   </Button>
                 </div>
