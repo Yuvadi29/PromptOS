@@ -1,0 +1,22 @@
+{
+  "name": "@promptos/sdk",
+  "version": "0.1.0",
+  "description": "Official TypeScript SDK for PromptOS",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
