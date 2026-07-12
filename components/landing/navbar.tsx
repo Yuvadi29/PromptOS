@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { Logo } from '../Logo';
 import { AuthButton } from '../AuthButton';
 
 const navLinks = [
@@ -35,12 +36,10 @@ export function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <a href="#" className="flex items-center gap-3 group">
-            <div className="relative w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20" />
-              <span className="font-mono text-primary font-bold text-lg relative z-10">P</span>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-primary/10" />
+            <div className="relative w-10 h-10 flex items-center justify-center group-hover:border-emerald-500/30 transition-all duration-300">
+              <Logo className="w-10 h-10 group-hover:scale-105 transition-transform duration-300" />
             </div>
-            <span className="text-xl font-bold tracking-tight">PromptOS</span>
+            <span className="text-xl font-bold tracking-tight text-white">PromptOS</span>
           </a>
 
           {/* Desktop Navigation */}

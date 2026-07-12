@@ -1,0 +1,40 @@
+<svg 
+  viewBox="0 0 100 100" 
+  fill="none" 
+  xmlns="http://www.w3.org/2000/svg" 
+>
+  {/* Bold vertical stem of the P (10px stroke width, white color) */}
+  <line 
+    x1="15" 
+    y1="5" 
+    x2="15" 
+    y2="95" 
+    stroke="#ffffff" 
+    strokeWidth="10" 
+    strokeLinecap="round"
+  />
+
+  {/* Bold chat bubble loop of the P (10px stroke width, white color) */}
+  <path 
+    d="M15 5H60C78 5 95 22 95 45C95 68 78 85 60 85H30L12 95V85H15" 
+    stroke="#ffffff" 
+    strokeWidth="10" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  />
+
+  {/* Bold terminal prompt symbol ( > ) */}
+  <path 
+    d="M32 30L45 45L32 60" 
+    stroke="#ffffff" 
+    strokeWidth="8" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  />
+
+  {/* Large, high-visibility AI Spark ( ✦ ) in Emerald Green */}
+  <path 
+    d="M58 45C66 45 66 33 66 33C66 33 66 45 74 45C66 45 66 57 66 57C66 57 66 45 58 45Z" 
+    fill="#10b981" 
+  />
+</svg>

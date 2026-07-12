@@ -23,8 +23,8 @@ import {
 import Link from 'next/link';
 import ProfileModal from './ProfileModal';
 import { signOut } from 'next-auth/react';
+import { Logo } from './Logo';
 import { redirect, usePathname } from 'next/navigation';
-import Image from 'next/image';
 
 // Menu Items
 const items = [
@@ -81,14 +81,7 @@ const SideBar = ({ user }: SideBarProps) => {
       <SidebarHeader className="p-6 relative z-10">
         <div className="flex items-center gap-2 px-2">
           <div className="flex items-center gap-3 px-2 group cursor-pointer transition-all">
-            <Image
-              src="/og-image.ico"
-              alt="PromptOS Logo"
-              width={40}
-              height={40}
-              className="rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.2)] group-hover:scale-105 transition-transform duration-300"
-              priority
-            />
+            <Logo className="w-8 h-8 filter drop-shadow-[0_0_8px_rgba(16,185,129,0.15)] group-hover:scale-105 transition-transform duration-300" />
             <span className="text-xl font-bold tracking-tight text-white drop-shadow-md">
               PromptOS
             </span>

@@ -4,34 +4,55 @@ import { useEffect, useRef } from 'react';
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { usePathname } from 'next/navigation';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
-    const lenisRef = useRef<Lenis | null>(null);
+  const pathname = usePathname();
+  const lenisRef = useRef<Lenis | null>(null);
 
-    useEffect(() => {
-        const lenis = new Lenis({
-            duration: 1.2,
-            easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            touchMultiplier: 2,
-        });
+  useEffect(() => {
+    // Disable Lenis on dashboard, admin, and utility pages to prevent nested scrolling conflicts
+    const isDisabledPath =
+      pathname?.startsWith('/dashboard') ||
+      pathname?.startsWith('/admin') ||
+      pathname?.startsWith('/status') ||
+      pathname?.startsWith('/privacy') ||
+      pathname?.startsWith('/terms') ||
+      pathname?.startsWith('/security');
 
-        lenisRef.current = lenis;
+    if (isDisabledPath) {
+      if (lenisRef.current) {
+        lenisRef.current.destroy();
+        lenisRef.current = null;
+      }
+      return;
+    }
 
-        // Sync Lenis with GSAP ScrollTrigger
-        lenis.on('scroll', ScrollTrigger.update);
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      touchMultiplier: 2,
+    });
 
-        gsap.ticker.add((time) => {
-            lenis.raf(time * 1000);
-        });
-        gsap.ticker.lagSmoothing(0);
+    lenisRef.current = lenis;
 
-        return () => {
-            lenis.destroy();
-            gsap.ticker.remove(lenis.raf as unknown as gsap.TickerCallback);
-        };
-    }, []);
+    // Sync Lenis with GSAP ScrollTrigger
+    lenis.on('scroll', ScrollTrigger.update);
 
-    return <>{children}</>;
+    const rafHandler = (time: number) => {
+      lenis.raf(time * 1000);
+    };
+    gsap.ticker.add(rafHandler);
+    gsap.ticker.lagSmoothing(0);
+
+    return () => {
+      lenis.destroy();
+      gsap.ticker.remove(rafHandler as unknown as gsap.TickerCallback);
+      lenisRef.current = null;
+    };
+  }, [pathname]);
+
+  return <>{children}</>;
 }

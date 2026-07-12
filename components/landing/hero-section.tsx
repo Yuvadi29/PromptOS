@@ -61,7 +61,7 @@ export default function HeroSection() {
           {[
             { value: '10x', label: 'more precise prompts.', company: 'ENHANCER' },
             { value: '3', label: 'LLMs compared side-by-side.', company: 'COMPARATOR' },
-            { value: '100%', label: 'open source & free.', company: 'COMMUNITY' },
+            { value: '100%', label: 'secure & private.', company: 'SECURITY' },
             { value: '<2s', label: 'to enhance any prompt.', company: 'PERFORMANCE' },
           ].map((stat) => (
             <div

@@ -5,10 +5,14 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 import { AsciiCube } from './ascii-cube';
 import { AsciiSphere } from './ascii-sphere';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export function CtaSection() {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const { data: session } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -47,24 +51,32 @@ export function CtaSection() {
                 </h2>
 
                 <p className="text-lg text-background/70 mb-8 leading-relaxed max-w-lg">
-                  Join developers shipping AI products faster with PromptOS. Free to start, open
-                  source forever.
+                  Join developers shipping AI products faster with PromptOS. Get started for free
+                  today.
                 </p>
 
                 <div className="flex flex-col sm:flex-row items-start gap-4">
                   <Button
                     size="lg"
-                    className="bg-background hover:bg-background/90 text-foreground px-6 h-12 text-sm font-medium group"
+                    onClick={() => {
+                      if (session) {
+                        router.push('/dashboard');
+                      } else {
+                        signIn('google', { callbackUrl: '/dashboard' });
+                      }
+                    }}
+                    className="bg-background hover:bg-background/90 text-foreground px-6 h-12 text-sm font-medium group cursor-pointer"
                   >
-                    Get started free
+                    {session ? 'Go to Dashboard' : 'Get started free'}
                     <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-0.5" />
                   </Button>
                   <Button
                     size="lg"
                     variant="outline"
-                    className="h-12 px-6 text-sm font-medium border-background/30 text-background hover:bg-background/10 bg-transparent"
+                    onClick={() => router.push('/prompt-library')}
+                    className="h-12 px-6 text-sm font-medium border-background/30 text-background hover:bg-background/10 bg-transparent cursor-pointer"
                   >
-                    Talk to sales
+                    Explore Library
                   </Button>
                 </div>
 

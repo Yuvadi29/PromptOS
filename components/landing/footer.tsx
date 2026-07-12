@@ -1,31 +1,25 @@
 'use client';
 
 import { Github, Twitter } from 'lucide-react';
-import { Sparkles } from 'lucide-react';
+import { Logo } from '../Logo';
 
 const footerLinks = {
   Product: [
     { name: 'Features', href: '#features' },
     { name: 'Technology', href: '#how-it-works' },
     { name: 'Metrics', href: '#metrics' },
-    { name: 'Changelog', href: '#' },
+    { name: 'Changelog', href: 'https://github.com/Yuvadi29/PromptOS/releases' },
   ],
   Developers: [
-    { name: 'Documentation', href: '#' },
-    { name: 'API Reference', href: '#' },
-    { name: 'SDK', href: '#developers' },
-    { name: 'Status', href: '#' },
-  ],
-  Company: [
-    { name: 'About', href: '#' },
-    { name: 'Blog', href: '#' },
-    { name: 'Careers', href: '#' },
-    { name: 'Contact', href: '#' },
+    // { name: 'Documentation', href: '#' },
+    // { name: 'API Reference', href: '#' },
+    // { name: 'SDK', href: '#developers' },
+    { name: 'Status', href: '/status' },
   ],
   Legal: [
-    { name: 'Privacy', href: '#' },
-    { name: 'Terms', href: '#' },
-    { name: 'Security', href: '#' },
+    { name: 'Privacy', href: '/privacy' },
+    { name: 'Terms', href: '/terms' },
+    { name: 'Security', href: '/security' },
   ],
 };
 
@@ -38,12 +32,11 @@ export function FooterSection() {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
             {/* Brand Column */}
             <div className="col-span-2">
-              {/* Logo */}
               <a href="#" className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-primary" />
+                <div className="w-8 h-8 rounded-lg bg-primary/5 border border-white/10 flex items-center justify-center">
+                  <Logo className="w-5 h-5" />
                 </div>
-                <span className="font-semibold text-lg tracking-tight">PromptOS</span>
+                <span className="font-semibold text-lg tracking-tight text-white">PromptOS</span>
               </a>
 
               <p className="text-sm text-muted-foreground leading-relaxed mb-6">
@@ -53,7 +46,7 @@ export function FooterSection() {
               {/* Social Links */}
               <div className="flex gap-3">
                 <a
-                  href="https://twitter.com"
+                  href="https://x.com/AdiTrivedi17"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground transition-colors"

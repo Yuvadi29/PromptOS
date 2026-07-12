@@ -1,5 +1,5 @@
 import HeroSection from '@/components/landing/hero-section';
-import SocialProof from '@/components/landing/social-proof';
+// import SocialProof from '@/components/landing/social-proof';
 // import {HowItWorksSection as HowItWorks} from '@/components/landing/how-it-works';
 import PlatformTools from '@/components/landing/platform-tools';
 import { CtaSection as CTASection } from '@/components/landing/cta-section';
@@ -28,7 +28,7 @@ export default function Home() {
       <PlatformTools />
       <MetricsSection />
       {/* <DevelopersSection /> */}
-      <SocialProof />
+      {/* <SocialProof /> */}
       <CTASection />
       <Footer />
       {/* </ClientShell> */}
