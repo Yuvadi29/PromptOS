@@ -1,0 +1,155 @@
+import OpenAI from 'openai';
+import { classifyPrompt } from '@/lib/prompt-classifier';
+import { getTemplate } from '@/lib/prompt-templates';
+import { buildFormats } from '@/lib/prompt-formatters';
+
+const apiKey = process.env.OPENROUTER_API_KEY || process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+if (!apiKey) {
+  throw new Error('Missing OpenRouter API Key');
+}
+
+const openrouter = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey,
+});
+
+export interface EnhancePromptInput {
+  prompt: string;
+  answers?: {
+    question: string;
+    answer: string;
+  }[];
+  userId?: string | null;
+}
+
+export interface EnhancePromptResult {
+  type: string;
+  formats: {
+    raw?: string;
+    markdown?: string;
+    json?: unknown;
+  };
+  saved: boolean;
+}
+
+export async function enhancePrompt({
+  prompt,
+  answers,
+  userId,
+}: EnhancePromptInput): Promise<EnhancePromptResult> {
+  if (!prompt || typeof prompt !== 'string') {
+    throw new Error('Missing prompt');
+  }
+
+  // Build context section from Q&A answers if provided
+  let contextSection = '';
+  if (answers && Array.isArray(answers) && answers.length > 0) {
+    contextSection = `
+
+IMPORTANT ADDITIONAL CONTEXT FROM USER:
+The user was asked clarifying questions and provided the following answers. Use these answers heavily to tailor and enhance the prompt:
+
+${answers.map((a, i) => `Q${i + 1}: ${a.question}\nA${i + 1}: ${a.answer}`).join('\n\n')}
+
+Use the above answers to deeply personalize the enhanced prompt — incorporate the target audience, tone, specificity, constraints, and output format the user specified.
+`;
+  }
+
+  // Auth & Stats Logging - only log streak if userId is present
+  if (userId) {
+    try {
+      const { logActivityAndCalculateStreak } = await import('@/lib/streaks');
+      // Fire and forget so we don't delay the stream
+      logActivityAndCalculateStreak(userId, 'prompt_enhanced', { prompt }).catch(console.error);
+    } catch (e) {
+      console.error('Stats error', e);
+    }
+  }
+
+  const classification = await classifyPrompt(prompt);
+  const template = getTemplate(classification.type);
+
+  const systemPrompt = `
+You are a world-class expert in prompt engineering and linguistic refinement. Your role is to act as a master craftsman of prompts — someone who can interpret, understand, and enhance user-provided prompts to a superior, clearer, and more effective version. Your task is to enhance the user prompt based on its intent and structure.
+
+Detected Prompt Type: ${classification.type}
+
+Follow these principles and steps meticulously:
+
+1. Analyze:
+  - Carefully read the user's input prompt.
+  - Identify the domain (e.g., creative writing, coding, marketing, study, business, etc.).
+  - Understand any implicit or explicit goals, tasks, or desired outputs embedded in the prompt.
+  - If necessary, infer missing details logically based on common use cases and best practices.
+
+2. Understand:
+  - Determine the core *intention* behind the user's prompt.
+  - Ask yourself: "What exactly is the user trying to achieve with this?"
+  - Pay attention to tone, style, target audience, complexity, and context.
+
+3. Enhance:
+  - Rewrite the user's prompt into a highly detailed, actionable, clear, and optimized version.
+  - Structure it properly with clarifications, better instructions, and relevant detail additions.
+  - Maintain the original spirit but elevate the quality dramatically.
+  - Ensure the enhanced prompt is ready for accurate and effective output.
+
+IMPORTANT STRUCTURE TO FOLLOW:
+${template}
+
+Formatting Instructions:
+- Present ONLY the final enhanced prompt inside triple backticks (\`\`\`).
+- Do NOT include any explanations before or after.
+- The enhanced prompt must sound natural, precise, goal-driven, and professional.
+${contextSection}User Input Prompt: 
+"""${prompt}"""
+`;
+
+  try {
+    const completion = await openrouter.chat.completions.create({
+      model: 'google/gemini-2.5-flash-lite',
+      messages: [{ role: 'user', content: systemPrompt + prompt }],
+    });
+
+    const text = (completion.choices[0]?.message?.content ?? '').replace(/``` /g, '').trim();
+
+    // Build formats
+    const formats = buildFormats(text, classification.type);
+
+    let saved = false;
+    if (userId) {
+      const { supabaseAdmin } = await import('@/lib/supabase');
+
+      const { data: maxData } = await supabaseAdmin
+        .from('prompts')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1);
+      const maxId = maxData?.[0]?.id || 0;
+      const nextId = Number(maxId) + 1;
+
+      const { error: saveError } = await supabaseAdmin.from('prompts').insert({
+        id: nextId,
+        created_by: userId,
+        prompt_value: formats.raw || text,
+        original_prompt: prompt,
+      });
+
+      if (saveError) {
+        console.error('Failed to save prompt in same API call:', saveError);
+      } else {
+        saved = true;
+        const { updateUserStreak } = await import('@/lib/streaks');
+        await updateUserStreak(userId).catch(console.error);
+      }
+    }
+
+    return {
+      type: classification.type,
+      formats,
+      saved,
+    };
+  } catch (error: any) {
+    console.error('OpenRouter API Error:', error);
+    throw new Error(`API Error: ${error.message}`);
+  }
+}
