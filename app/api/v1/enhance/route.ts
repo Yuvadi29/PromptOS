@@ -4,6 +4,7 @@ import { successResponse } from '@/lib/api/response';
 import { errorResponse } from '@/lib/api/errors';
 import { enhancePrompt } from '@/lib/services/enhance.service';
 import { authenticateApiKey } from '@/lib/platform/authenticateApiKey';
+import { captureTelemetry } from '@/lib/platform/telemetry';
 
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (!auth.success) {
     return auth.response;
   }
-  const { userId } = auth.data;
+  const { userId, apiKeyId } = auth.data;
 
   const requestId = createRequestId();
 
@@ -48,6 +49,25 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await enhancePrompt({ prompt, answers, userId });
+    await captureTelemetry({
+      requestId,
+
+      apiKeyId,
+
+      userId,
+
+      endpoint: '/v1/enhance',
+
+      method: 'POST',
+
+      status: 200,
+
+      latency: Date.now() - startedAt,
+
+      ip: req.headers.get('x-forwarded-for') ?? '',
+
+      userAgent: req.headers.get('user-agent') ?? '',
+    });
     return successResponse({
       data: result,
       requestId,
