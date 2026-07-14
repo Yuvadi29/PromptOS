@@ -3,9 +3,14 @@ import { errorResponse } from '@/lib/api/errors';
 import { createRequestId } from '@/lib/api/requestId';
 import { successResponse } from '@/lib/api/response';
 import { classifyPrompt } from '@/lib/services/prompt.service';
+import { authenticateApiKey } from '@/lib/platform/authenticateApiKey';
 
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
+  const auth = await authenticateApiKey(req);
+  if (!auth.success) {
+    return auth.response;
+  }
   const requestId = createRequestId();
 
   try {

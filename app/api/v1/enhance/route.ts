@@ -3,9 +3,16 @@ import { createRequestId } from '@/lib/api/requestId';
 import { successResponse } from '@/lib/api/response';
 import { errorResponse } from '@/lib/api/errors';
 import { enhancePrompt } from '@/lib/services/enhance.service';
+import { authenticateApiKey } from '@/lib/platform/authenticateApiKey';
 
 export async function POST(req: NextRequest) {
   const startedAt = Date.now();
+  const auth = await authenticateApiKey(req);
+  if (!auth.success) {
+    return auth.response;
+  }
+  const { userId } = auth.data;
+
   const requestId = createRequestId();
 
   let prompt = '';
@@ -39,12 +46,8 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // In a real v1 SDK API, validate API keys or tokens.
-  // const authHeader = req.headers.get('authorization');
-  // if (!authHeader || !isValidToken(authHeader)) return errorResponse(...)
-
   try {
-    const result = await enhancePrompt({ prompt, answers, userId: null });
+    const result = await enhancePrompt({ prompt, answers, userId });
     return successResponse({
       data: result,
       requestId,
