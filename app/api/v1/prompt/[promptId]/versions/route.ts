@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, props: { params: Promise<{ promptId
     return errorResponse({
       requestId,
       status: error.message === 'Content is required' ? 400 : 500,
-      code: error.message === 'Content is required' ? 'BAD_REQUEST' : 'INTERNAL_SERVER_ERROR',
+      code: error.message === 'Content is required' ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR',
       message: error.message || 'Failed to create prompt version',
     });
   }

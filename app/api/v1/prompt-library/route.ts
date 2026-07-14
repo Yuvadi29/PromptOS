@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 401,
-        code: 'UNAUTHORIZED',
+        code: 'AUTHENTICATION_ERROR',
         message: 'Unauthorized: Valid testUserEmail is required for testing',
       });
     }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     return errorResponse({
       requestId,
       status: error.message === 'Missing Data' ? 400 : 500,
-      code: error.message === 'Missing Data' ? 'BAD_REQUEST' : 'INTERNAL_SERVER_ERROR',
+      code: error.message === 'Missing Data' ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR',
       message: error.message || 'Failed to create prompt',
     });
   }

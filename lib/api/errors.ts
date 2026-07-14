@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { APIErrorCode } from './codes';
 
 export function errorResponse({
   requestId,
@@ -8,7 +9,7 @@ export function errorResponse({
 }: {
   requestId: string;
   status: number;
-  code: string;
+  code: APIErrorCode;
   message: string;
 }) {
   return NextResponse.json(

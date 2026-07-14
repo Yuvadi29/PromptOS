@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 400,
-        code: 'BAD_REQUEST',
+        code: 'VALIDATION_ERROR',
         message: 'Invalid response or feedback type',
       });
     }
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 401,
-        code: 'UNAUTHORIZED',
+        code: 'AUTHENTICATION_ERROR',
         message: 'Unauthorized: Valid testUserEmail is required for testing',
       });
     }

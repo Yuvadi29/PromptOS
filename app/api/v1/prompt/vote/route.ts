@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return errorResponse({
       requestId,
       status: error.message === 'Invalid data' ? 400 : 500,
-      code: error.message === 'Invalid data' ? 'BAD_REQUEST' : 'INTERNAL_SERVER_ERROR',
+      code: error.message === 'Invalid data' ? 'VALIDATION_ERROR' : 'INTERNAL_SERVER_ERROR',
       message: error.message || 'Failed to vote on prompt',
     });
   }

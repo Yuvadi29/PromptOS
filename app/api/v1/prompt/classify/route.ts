@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 400,
-        code: 'BAD_REQUEST',
+        code: 'VALIDATION_ERROR',
         message: 'Missing Input',
       });
     }

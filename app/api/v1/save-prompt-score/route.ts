@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 401,
-        code: 'UNAUTHORIZED',
+        code: 'AUTHENTICATION_ERROR',
         message: 'Unauthorized: testUserEmail is required',
       });
     }

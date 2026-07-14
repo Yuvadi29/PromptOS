@@ -20,7 +20,7 @@ export async function POST(
     return errorResponse({
       requestId,
       status: error.message.includes('not found') ? 404 : 500,
-      code: error.message.includes('not found') ? 'NOT_FOUND' : 'INTERNAL_SERVER_ERROR',
+      code: error.message.includes('not found') ? 'RESOURCE_NOT_FOUND' : 'INTERNAL_SERVER_ERROR',
       message: error.message || 'Failed to revert prompt version',
     });
   }

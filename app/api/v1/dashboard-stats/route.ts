@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 401,
-        code: 'UNAUTHORIZED',
+        code: 'AUTHENTICATION_ERROR',
         message: 'Unauthorized: Valid testUserEmail is required for testing',
       });
     }

@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 401,
-        code: 'UNAUTHORIZED',
+        code: 'AUTHENTICATION_ERROR',
         message: 'testUserEmail required',
       });
     }
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       return errorResponse({
         requestId,
         status: 404,
-        code: 'NOT_FOUND',
+        code: 'RESOURCE_NOT_FOUND',
         message: 'User not found',
       });
     }
