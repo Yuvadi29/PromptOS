@@ -2,11 +2,10 @@ import { APIErrorCodes } from '@/lib/api/codes';
 import { errorResponse } from '@/lib/api/errors';
 import { createRequestId } from '@/lib/api/requestId';
 import { successResponse } from '@/lib/api/response';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth/getCurrentUser';
 import { generateAPIKey } from '@/lib/auth/generate';
 import { hashAPIKey } from '@/lib/auth/hash';
 import { supabaseAdmin } from '@/lib/supabase';
-import { getServerSession } from 'next-auth';
 import { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -14,21 +13,19 @@ export async function POST(req: NextRequest) {
   const requestId = createRequestId();
 
   try {
-    const body = await req.json();
-    const name = body?.name?.trim();
-    const fallbackEmail = body?.email || body?.testUserEmail;
+    const user = await getCurrentUser(req);
 
-    const session = await getServerSession(authOptions);
-    const userEmail = session?.user?.email || fallbackEmail;
-
-    if (!userEmail) {
+    if (!user) {
       return errorResponse({
         requestId,
         status: 401,
         code: APIErrorCodes.AUTHENTICATION_ERROR,
-        message: 'Unauthorized: No session or email provided',
+        message: 'Unauthorized',
       });
     }
+
+    const body = await req.json();
+    const name = body?.name?.trim();
 
     if (!name) {
       return errorResponse({
@@ -36,21 +33,6 @@ export async function POST(req: NextRequest) {
         status: 400,
         code: APIErrorCodes.VALIDATION_ERROR,
         message: 'Key name is required',
-      });
-    }
-
-    const { data: user } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', userEmail)
-      .single();
-
-    if (!user) {
-      return errorResponse({
-        requestId,
-        status: 404,
-        code: APIErrorCodes.AUTHENTICATION_ERROR,
-        message: 'User not found',
       });
     }
 

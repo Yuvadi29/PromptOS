@@ -6,11 +6,13 @@ import { APIErrorCodes } from '@/lib/api/codes';
 import { successResponse } from '@/lib/api/response';
 import { getCurrentUser } from '@/lib/auth/getCurrentUser';
 
-export async function GET(req: NextRequest) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ keyId: string }> }) {
   const startedAt = Date.now();
   const requestId = createRequestId();
 
   try {
+    const { keyId } = await params;
+
     const user = await getCurrentUser(req);
 
     if (!user) {
@@ -22,37 +24,29 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('api_keys')
-      .select(
-        `
-        id,
-        name,
-        prefix,
-        created_at,
-        last_used,
-        expires_at,
-        is_active
-      `
-      )
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .update({
+        is_active: false,
+      })
+      .eq('id', keyId)
+      .eq('user_id', user.id);
 
     if (error) {
-      console.error(error);
-
       return errorResponse({
         requestId,
         status: 500,
         code: APIErrorCodes.INTERNAL_SERVER_ERROR,
-        message: 'Failed to fetch API keys',
+        message: error.message,
       });
     }
 
     return successResponse({
       requestId,
       startedAt,
-      data,
+      data: {
+        revoked: true,
+      },
     });
   } catch (err) {
     console.error(err);
