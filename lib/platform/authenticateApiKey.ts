@@ -50,7 +50,7 @@ export async function authenticateApiKey(req: NextRequest): Promise<
 
   const apiKey = authHeader.replace('Bearer ', '').trim();
 
-  const hashed = hashAPIKey(apiKey);
+  const hashed = await hashAPIKey(apiKey);
 
   const { data, error } = await supabaseAdmin
     .from('api_keys')

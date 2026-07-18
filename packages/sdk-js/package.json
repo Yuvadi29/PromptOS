@@ -4,20 +4,27 @@
   "description": "Official TypeScript SDK for PromptOS",
   "type": "module",
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
-  "dependencies": {
-    "@promptos/sdk": "file:promptos-sdk-0.1.0.tgz",
-    "zod": "^3.25.0"
+  "author": "PromptOS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/promptos/promptos.git"
   },
   "devDependencies": {
-    "typescript": "^5.9.2"
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.10"
   }
 }

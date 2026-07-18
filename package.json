@@ -39,6 +39,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "@tabler/icons-react": "^3.41.1",
     "@tailwindcss/typography": "^0.5.19",
+    "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
