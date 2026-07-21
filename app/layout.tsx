@@ -64,6 +64,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="robots" content="index, follow" />
         <meta name="author" content="PromptOS" />
         <meta name="theme-color" content="#ffffff" />
+        <meta name="google-site-verification" content="93fdV_bSyn6_AEFyCdFBmH3SrwQhjRh9rrZ9CLY2JOk" />
         <link rel="canonical" href="https://promptos.in/" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <script type="application/ld+json">
