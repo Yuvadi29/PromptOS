@@ -40,9 +40,7 @@ async function retry(fn, options) {
       if (i === options.retries) {
         break;
       }
-      await new Promise(
-        (resolve) => setTimeout(resolve, options.delay * (i + 1))
-      );
+      await new Promise((resolve) => setTimeout(resolve, options.delay * (i + 1)));
     }
   }
   throw lastError;
@@ -70,23 +68,20 @@ var HttpClient = class {
     try {
       return await retry(
         async () => {
-          const response = await fetch(
-            `${this.baseURL}${endpoint}`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${this.apiKey}`,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify(body),
-              signal: controller.signal
-            }
-          );
+          const response = await fetch(`${this.baseURL}${endpoint}`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${this.apiKey}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal
+          });
           const text = await response.text();
           let json;
           try {
             json = JSON.parse(text);
-          } catch (e) {
+          } catch {
           }
           if (!response.ok) {
             throw new PromptOSError(
@@ -109,13 +104,9 @@ var HttpClient = class {
         throw err;
       }
       if (err instanceof Error && err.name === "AbortError") {
-        throw new PromptOSError(
-          "Request timed out."
-        );
+        throw new PromptOSError("Request timed out.");
       }
-      throw new PromptOSError(
-        "Network request failed."
-      );
+      throw new PromptOSError("Network request failed.");
     } finally {
       clearTimeout(timeout);
     }
