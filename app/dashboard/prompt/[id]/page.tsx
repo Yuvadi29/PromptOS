@@ -2,7 +2,6 @@
 
 import { useParams } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { supabaseAdmin } from '@/lib/supabase';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,53 +31,45 @@ export default function PromptSessionPage() {
   } | null>(null);
 
   const fetchLatestVersion = useCallback(async () => {
-    // 1. Fetch base prompt details (created_at)
-    const { data: promptData } = await supabaseAdmin
-      .from('prompts')
-      .select('created_at')
-      .eq('id', id)
-      .single();
+    // Load the base prompt + its versions from the server (service-role stays
+    // server-side; the route is scoped to the prompt's owner).
+    const res = await fetch(`/api/prompt/${id}`);
 
-    // 2. Fetch all versions to determine newest and oldest
-    const { data: versions } = await supabaseAdmin
-      .from('prompt_versions')
-      .select('*')
-      .eq('prompt_id', id)
-      .order('version_number', { ascending: false });
+    if (!res.ok) {
+      setLoading(false);
+      return;
+    }
 
-    let latestModDate = promptData?.created_at;
+    const promptData: {
+      prompt_value: string | null;
+      created_at: string;
+      versions: PromptVersion[];
+    } = await res.json();
+
+    const versions = promptData.versions;
+    let latestModDate = promptData.created_at;
 
     if (versions && versions.length > 0) {
       const latest = versions[0];
       setCurrentVersion(latest);
       setEnhancedPrompt(latest.content);
-      latestModDate = latest.created_at;
-    } else {
+      latestModDate = latest.created_at ?? latestModDate;
+    } else if (promptData.prompt_value != null) {
       // Fallback: If no versions exist yet, load the original prompt
-      const { data: originalPrompt } = await supabaseAdmin
-        .from('prompts')
-        .select('prompt_value')
-        .eq('id', id)
-        .single();
-
-      if (originalPrompt) {
-        const fallbackVersion = {
-          version_number: 1,
-          source: 'Original Generation',
-          content: originalPrompt.prompt_value,
-          prompt_id: (Array.isArray(id) ? id[0] : id) as string,
-        };
-        setCurrentVersion(fallbackVersion);
-        setEnhancedPrompt(originalPrompt.prompt_value);
-      }
+      const fallbackVersion = {
+        version_number: 1,
+        source: 'Original Generation',
+        content: promptData.prompt_value,
+        prompt_id: (Array.isArray(id) ? id[0] : id) as string,
+      };
+      setCurrentVersion(fallbackVersion);
+      setEnhancedPrompt(promptData.prompt_value);
     }
 
-    if (promptData) {
-      setPromptMeta({
-        created_at: promptData.created_at,
-        last_modified: latestModDate,
-      });
-    }
+    setPromptMeta({
+      created_at: promptData.created_at,
+      last_modified: latestModDate,
+    });
 
     setLoading(false);
   }, [id]);
@@ -93,25 +84,23 @@ export default function PromptSessionPage() {
   const handleSave = async () => {
     setSaving(true);
 
-    const { data, error } = await supabaseAdmin
-      .from('prompt_versions')
-      .insert([
-        {
-          prompt_id: id,
-          content: enhancedPrompt,
-          source: 'user',
-          reason: 'User edited prompt in editor',
-        },
-      ])
-      .select()
-      .single();
+    const res = await fetch(`/api/prompt/${id}/versions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        content: enhancedPrompt,
+        source: 'user',
+        reason: 'User edited prompt in editor',
+      }),
+    });
 
-    if (!error) {
+    if (res.ok) {
+      const data = await res.json();
       alert(`New version created: v${data.version_number}`);
       // Refresh prompt meta and version info
       await fetchLatestVersion();
     } else {
-      console.error(error);
+      console.error('Failed to save new version');
     }
 
     setSaving(false);

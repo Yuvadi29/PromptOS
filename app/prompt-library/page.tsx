@@ -44,7 +44,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { supabaseAdmin } from '@/lib/supabase';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -178,18 +177,7 @@ export default function PromptLibrary() {
     const userEmail = session?.user?.email;
     if (!userEmail) return toast.error('User not logged in');
 
-    const { data: userData, error } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .eq('email', userEmail)
-      .single();
-
-    if (error || !userData) {
-      return toast.error('Failed to fetch user ID');
-    }
-
     const createdPrompt = {
-      userId: userData?.id,
       title: newPrompt?.title,
       description: newPrompt?.description,
       promptText: newPrompt?.promptText,

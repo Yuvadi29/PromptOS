@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@/context/UserContext';
-import { supabaseAdmin } from '@/lib/supabase';
 import { useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 import gsap from 'gsap';
@@ -32,28 +31,15 @@ const Page = () => {
     const getPrompts = async () => {
       setLoading(true);
       try {
-        const { data: userData } = await supabaseAdmin
-          .from('users')
-          .select('id')
-          .eq('email', user?.email)
-          .single();
+        const res = await fetch('/api/prompts');
 
-        if (!userData) {
-          setLoading(false);
+        if (!res.ok) {
+          if (res.status !== 401) toast.error('Error fetching prompts');
+          setPrompts([]);
           return;
         }
 
-        const { data, error } = await supabaseAdmin
-          .from('prompts')
-          .select('id, prompt_value, created_at')
-          .eq('created_by', userData?.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          toast.error('Error fetching prompts');
-          return;
-        }
-
+        const data = await res.json();
         setPrompts(data || []);
       } catch (err) {
         console.error('Failed to load prompts:', err);
@@ -89,9 +75,9 @@ const Page = () => {
   const handleDelete = async () => {
     if (!deletePromptId) return;
 
-    const { error } = await supabaseAdmin.from('prompts').delete().eq('id', deletePromptId);
+    const res = await fetch(`/api/prompt/${deletePromptId}`, { method: 'DELETE' });
 
-    if (error) {
+    if (!res.ok) {
       toast.error('Error Deleting Prompt');
       return;
     }
