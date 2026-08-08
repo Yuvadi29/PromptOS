@@ -4,7 +4,6 @@ import ScoreCard from '@/components/ScoreCard';
 import ScoringCriteria from '@/components/ScoringCriteria';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { supabaseAdmin } from '@/lib/supabase';
 import { useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -35,24 +34,12 @@ const Page = () => {
     const timer = setTimeout(async () => {
       if (!session?.user?.email || !prompt || !score) return;
 
-      const { data: userData, error } = await supabaseAdmin
-        .from('users')
-        .select('id')
-        .eq('email', session.user.email)
-        .single();
-
-      if (error || !userData) {
-        console.error('Failed to fetch user ID from Supabase: ', error);
-        return;
-      }
-
       const res = await fetch('/api/save-prompt-score', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: userData.id,
           prompt: prompt,
           clarity: score?.criteriaScores?.clarity,
           specificity: score?.criteriaScores?.specificity,
